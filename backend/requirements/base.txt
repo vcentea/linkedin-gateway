@@ -1,0 +1,51 @@
+# FastAPI and Web Framework
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+pydantic==2.11.3
+pydantic-settings==2.6.0
+
+# Database
+sqlalchemy==2.0.40
+alembic==1.15.2
+psycopg2-binary==2.9.10
+asyncpg==0.30.0
+
+# Security and Authentication
+python-jose[cryptography]==3.4.0
+passlib[bcrypt]==1.7.4
+bcrypt==3.2.0
+python-multipart==0.0.20
+
+# Environment and Configuration
+python-dotenv==1.1.0
+
+# CORS and Middleware
+starlette==0.46.2
+itsdangerous==2.1.2  # Required by Starlette SessionMiddleware
+
+# WebSockets
+websockets==15.0.1
+
+# HTTP Client
+httpx==0.28.1
+
+# Rate Limiting
+fastapi-limiter==0.1.6
+redis==5.0.1
+
+# OpenAPI and Documentation
+openapi-spec-validator==0.7.1
+
+# Testing
+pytest==8.3.5
+pytest-asyncio==0.23.5
+
+# Utilities
+iso8601==2.1.0
+email-validator==2.1.0
+
+# OAuth
+Authlib==1.5.2
+
+# Cryptography (for secrets generation)
+cryptography==42.0.5 

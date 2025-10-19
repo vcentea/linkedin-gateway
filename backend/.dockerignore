@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation
+*.md
+docs/
+debug_html/
+
+# Database files (use init-scripts instead)
+*.sql
+*.backup
+mydb.backup
+mydb.sql
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Environment files (managed in deployment/)
+.env
+.env.*
+
+# Logs
+*.log
+logs/
+
+# Alembic (if not needed in container)
+alembic.ini
+alembic/
+
+# Node modules (if any)
+node_modules/
+package.json
+package-lock.json
+
+# Migration scripts (if not using Alembic in container)
+db_scripts/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+

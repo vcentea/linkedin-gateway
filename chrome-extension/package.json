@@ -1,0 +1,31 @@
+{
+  "name": "linkedin-gateway",
+  "version": "1.5.0",
+  "description": "A Chrome extension for connecting your LinkedIn profile with matching opportunities",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "watch": "webpack --watch --config webpack.config.js",
+    "dev": "webpack --mode=development --watch --config webpack.config.js",
+    "prod": "webpack --mode=production --watch --config webpack.config.js",
+    "build:dev": "webpack --config webpack.config.v2.js",
+    "build:prod": "webpack --config webpack.config.prod.v2.js",
+    "watch:dev": "webpack --watch --config webpack.config.v2.js",
+    "watch:prod": "webpack --watch --config webpack.config.prod.v2.js"
+  },
+  "keywords": [
+    "linkedin",
+    "networking",
+    "chrome-extension"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.9",
+    "babel-loader": "^9.2.1",
+    "copy-webpack-plugin": "^11.0.0",
+    "webpack": "^5.99.7",
+    "webpack-cli": "^5.1.4"
+  }
+}

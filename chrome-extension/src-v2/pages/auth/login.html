@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Gateway - Login</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .login-container {
+            padding: 30px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .login-container:hover {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            color: #0077b5; /* LinkedIn blue */
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        p {
+            margin-bottom: 25px;
+            color: #666;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        #loginButton {
+            border: none;
+            outline: none;
+            width: 215px;
+            height: 40px;
+            background-image: url('../../assets/images/Sign-In-Large---Default.png');
+            background-size: cover;
+            cursor: pointer;
+            transition: background-image 0.3s ease;
+            background-color: transparent;
+        }
+
+        #loginButton:hover {
+            background-image: url('../../assets/images/Sign-In-Large---Hover.png');
+        }
+
+        #loginButton:active {
+            background-image: url('../../assets/images/Sign-In-Large---Active.png');
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .info {
+            background-color: #e3f2fd;
+            color: #0277bd;
+            border: 1px solid #bbdefb;
+        }
+
+        .server-selection {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .server-selection label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .server-selection select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .custom-server-fields {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .custom-server-fields input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .custom-server-fields label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .help-text {
+            display: block;
+            margin-top: 5px;
+            color: #999;
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        .server-health {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        .health-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .health-indicator.checking {
+            background-color: #ffa500;
+            animation: pulse 1.5s infinite;
+        }
+
+        .health-indicator.online {
+            background-color: #4caf50;
+        }
+
+        .health-indicator.offline {
+            background-color: #f44336;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .email-login-form {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #0077b5;
+        }
+
+        .email-login-button {
+            width: 100%;
+            padding: 12px;
+            background-color: #0077b5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .email-login-button:hover {
+            background-color: #005582;
+        }
+
+        .email-login-button:active {
+            background-color: #004466;
+        }
+
+        .email-login-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .help-text-center {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .help-text-center small {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .forgot-password {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .forgot-password a {
+            color: #0077b5;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        #linkedin-login-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .login-divider {
+            position: relative;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .login-divider span {
+            background-color: white;
+            padding: 0 15px;
+            color: #999;
+            font-size: 13px;
+            font-weight: bold;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: #ddd;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="../../assets/icons/icon128.png" alt="LinkedIn Gateway Logo" class="logo">
+        <h1>Welcome to LinkedIn Gateway</h1>
+        <p>Connect with LinkedIn to enhance your professional networking experience. Access powerful tools to manage your profile and connections.</p>
+        
+        <div class="server-selection">
+            <label for="server-select">Select Server:</label>
+            <select id="server-select">
+                <option value="MAIN" selected>Main Server (Cloud)</option>
+                <option value="CUSTOM">Your Private Server </option>
+            </select>
+            
+            <div id="custom-server-fields" class="custom-server-fields">
+                <label for="custom-api-url">Server URL:</label>
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <input type="url" id="custom-api-url" placeholder="https://your-server.com" style="flex: 1; margin-bottom: 0;" />
+                    <button id="connect-server-btn" style="padding: 10px 20px; background-color: #0077b5; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;">Connect</button>
+                </div>
+                <small class="help-text" id="custom-url-help">Enter your server URL and click Connect to verify</small>
+            </div>
+        </div>
+        
+        <div id="server-health" class="server-health" style="display: none;">
+            <span class="health-indicator checking" id="health-indicator"></span>
+            <span id="health-status">Checking server...</span>
+        </div>
+        
+        <!-- Email/Password Login Form (for custom servers) -->
+        <div id="email-login-form" class="email-login-form" style="display: none;">
+            <div class="form-group">
+                <label for="email-input">Email:</label>
+                <input type="email" id="email-input" placeholder="your@email.com" required />
+            </div>
+            <div class="form-group">
+                <label for="password-input">Password:</label>
+                <input type="password" id="password-input" placeholder="Enter your password" required />
+            </div>
+            <button id="email-login-btn" class="email-login-button">Login / Register</button>
+            <div class="help-text-center">
+                <small>First time? Just login to create your account!</small>
+            </div>
+            <div class="forgot-password">
+                <a href="#" id="forgot-password-link">Forgot Password?</a>
+            </div>
+        </div>
+        
+        <!-- OR Divider (for custom servers) -->
+        <div id="login-divider" class="login-divider" style="display: none;">
+            <span>OR</span>
+        </div>
+        
+        <!-- LinkedIn Login Button (for main server or optional for custom) -->
+        <div id="linkedin-login-container">
+            <button id="loginButton"></button>
+        </div>
+        
+        <div id="statusMessage" class="status-message"></div>
+    </div>
+    <script type="module" src="./login.bundle.js"></script>
+</body>
+</html> 
