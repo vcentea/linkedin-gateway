@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Tester | LinkedIn Gateway</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <style>
+        :root {
+            --primary-color: #0077b5;
+            --secondary-color: #00a0dc;
+            --light-gray: #f3f6f8;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --error-color: #d32f2f;
+            --success-color: #388e3c;
+        }
+        
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+        }
+        
+        header {
+            background-color: #0077b5;
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        
+        h1 {
+            font-size: 22px;
+            margin: 0;
+            color: white;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background-color: #ddd;
+            overflow: hidden;
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-name {
+            margin-right: 15px;
+            color: white;
+        }
+        
+        .logout-btn {
+            background-color: transparent;
+            border: 1px solid white;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+        
+        .logout-btn:hover {
+            background-color: white;
+            color: #0077b5;
+        }
+        
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--light-gray);
+        }
+        
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-tab.active {
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .nav-tab:hover {
+            background-color: rgba(0, 119, 181, 0.05);
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        h1, h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        select, input, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 119, 181, 0.1);
+        }
+        
+        textarea {
+            min-height: 120px;
+            font-family: monospace;
+            white-space: pre;
+        }
+        
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .settings-section {
+            margin-bottom: 2rem;
+        }
+        
+        .response-container {
+            background-color: #f5f5f5;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1.5rem;
+            overflow-x: auto;
+        }
+        
+        .response-container pre {
+            margin: 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .error-box {
+            background-color: rgba(211, 47, 47, 0.1);
+            color: var(--error-color);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        
+        .loading-indicator {
+            display: none;
+            margin-bottom: 1rem;
+        }
+        
+        .loading-indicator::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, 
+                rgba(0, 119, 181, 0.2) 0%, 
+                rgba(0, 119, 181, 1) 50%, 
+                rgba(0, 119, 181, 0.2) 100%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .api-transaction-display {
+            margin-top: 2rem;
+        }
+        
+        .request-section, .response-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .code-display {
+            background-color: #f5f5f5;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+        }
+        
+        .code-display pre {
+            margin: 0;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1rem;
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo-container">
+                <img src="../assets/icons/icon128.png" alt="Logo" class="logo">
+                <h1>LinkedIn Gateway</h1>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">
+                    <img id="userAvatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3Ccircle cx='20' cy='14' r='6' fill='%23999'/%3E%3Cpath d='M 8 32 Q 8 24 20 24 Q 32 24 32 32 Z' fill='%23999'/%3E%3C/svg%3E" alt="User Avatar">
+                </div>
+                <span id="userName" class="user-name">Loading...</span>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+                <button id="backBtn" class="btn btn-secondary">
+                    ← Dashboard
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <main>
+        <h2>API Tester</h2>
+        <div class="error-box" id="api-error"></div>
+        <div class="loading-indicator" id="api-loading"></div>
+        
+        <div class="container" id="api-tester-container">
+            <form id="api-form">
+                <div class="form-group">
+                    <label for="endpoint-select">API Endpoint</label>
+                    <select id="endpoint-select" required></select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Endpoint Details</label>
+                    <div id="method-display">Method: </div>
+                    <div id="full-url-display">URL: </div>
+                    <div id="endpoint-description" style="margin-top: 0.5rem; font-style: italic; color: #666;"></div>
+                </div>
+                
+                <!-- API Key field -->
+                <div class="form-group">
+                    <label for="api-key-input">API Key (Required)</label>
+                    <div style="background: #f0f7ff; border-left: 3px solid #0066cc; padding: 0.75rem; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        <strong>📌 How to use your API Key:</strong>
+                        <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+                            <li><strong>Header:</strong> <code style="background: #e8f4f8; padding: 0.2rem 0.4rem; border-radius: 3px;">X-API-Key: your_api_key_here</code></li>
+                        </ul>
+                        <p style="margin: 0.5rem 0 0 0; color: #666;">The tester automatically adds your key to both header and body.</p>
+                    </div>
+                    <input type="text" id="api-key-input" placeholder="Enter your API key" required>
+                </div>
+                
+                <!-- Server Call Toggle -->
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="server-call-toggle" style="width: auto; margin-right: 0.5rem;">
+                        <span>Execute on Server (server_call)</span>
+                    </label>
+                    <small style="color: #666; display: block; margin-top: 0.25rem;">
+                        When enabled, LinkedIn API calls execute on the backend server. 
+                        When disabled (default), calls execute via client/WebSocket.
+                    </small>
+                </div>
+                
+                <!-- Parameter fields will be inserted here -->
+                <div id="params-container"></div>
+                
+                <!-- Custom API Request section - hidden by default -->
+                <div id="custom-section" style="display: none;">
+                    <div class="form-group">
+                        <label for="custom-endpoint">Custom Endpoint</label>
+                        <input type="text" id="custom-endpoint" placeholder="e.g., /posts or /user/1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="custom-method">Method</label>
+                        <select id="custom-method">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="PATCH">PATCH</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="custom-body">Request Body (JSON)</label>
+                        <textarea id="custom-body" placeholder='{ "key": "value" }'></textarea>
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <button type="submit" id="submit-api" class="btn">
+                        Send API Request
+                    </button>
+                    <button type="button" id="test-locally-btn" class="btn btn-secondary" disabled>
+                        Test Locally
+                    </button>
+                </div>
+            </form>
+            
+            <div id="response-container" class="response-container" style="display: none;"></div>
+        </div>
+    </main>
+    
+    <footer>
+        &copy; 2023 LinkedIn Gateway. All rights reserved.
+    </footer>
+    
+    <!-- Script is loaded as a module to support proper import/export -->
+    <script type="module" src="../api-tester.bundle.js"></script>
+</body>
+</html> 

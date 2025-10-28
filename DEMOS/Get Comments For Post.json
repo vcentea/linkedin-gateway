@@ -1,0 +1,1740 @@
+{
+  "name": "Get Comments For Post",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "310afa12-0048-4cf1-b4b9-fb854caca4ca",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1168,
+        336
+      ],
+      "id": "65cade21-f09c-4abd-993b-d38cd0994378",
+      "name": "Webhook",
+      "webhookId": "310afa12-0048-4cf1-b4b9-fb854caca4ca"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/posts/get-commenters",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "num_replies",
+              "value": "2"
+            },
+            {
+              "name": "count",
+              "value": "100"
+            },
+            {
+              "name": "post_url",
+              "value": "={{ $('Post URL (get it from webhook)').item.json.Post_URL }}"
+            },
+            {
+              "name": "min_delay",
+              "value": "3"
+            },
+            {
+              "name": "max_delay",
+              "value": "7"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 100000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1536,
+        112
+      ],
+      "id": "e426b6d4-328a-4cc5-8333-097a50a3abd0",
+      "name": "GET COMMENTS ON POST",
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/posts/reply-to-comment",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"comment_urn\": \"{{ $json.data[3].commentUrn }}\",\n  \"reply_text\": \"...\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        -368
+      ],
+      "id": "d68d8927-0342-4fb2-997a-a2d63867d338",
+      "name": "REPLY TO COMMENT",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# BEST PRACTICE. IMPORTANT !!!!\n\n## 1. Always use \"execute only once\" on Linkedin API nodes !\n\n### This way if by mistake you are putting this node after a node that outputs 100 elements you avoid upsetting the Linkedin Rate Limits and endangering your account.\n\n## 2. Use \"PIN data\" while you are testing, \n\n### To avoid calling Linkedin API many times and rising suspicion on your account.\n\n## 3. Use \"Wait\" nodes between calls with Random values\n\n### This way you simulate human like behavior\n\n## 4. For \"paginated\" functions like \"get comments\" or \"get posts for profile\" Use the delay parameters\n\n### This types of functions are getting large amount of data so we have to simulate human behavior. \n\n### You have 2 additional params in these functions. Example: \"min_delay\": \"2\",\n  \"max_delay\": \"5\"). These will randomize the delay, simulating a human that is clicking on \"show more comments\" on the page.\n",
+        "height": 608,
+        "width": 1136,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -864,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "b9a4a483-80ce-4ed2-b301-fd80ea6cdcd0",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1984,
+        336
+      ],
+      "id": "94814cb1-29a2-4e0d-b72c-c59fa99687b3",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        336
+      ],
+      "id": "ab910682-2e4a-4b6f-b5e2-757f6c691e14",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "11cdc757-8d51-4d01-91b3-75b8c21c6299",
+              "name": "Post_URL",
+              "value": "https://www.linkedin.com/posts/vlad-centea_opensource-linkedinautomation-enterpriseai-activity-7384199567258427392-IHhk?utm_source=share&utm_medium=member_desktop&rcm=ACoAAE6NWVkBs_w9UHFzV8oRIt_9bFJxdXlAEVM",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -800,
+        336
+      ],
+      "id": "259ff16c-a601-449e-aef1-9e6fcffbda5a",
+      "name": "Post URL (get it from webhook)"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "fnQmhCt38PUGUG8H",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - posts list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/fnQmhCt38PUGUG8H"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Post_ID",
+              "keyValue": "={{ $('Post URL (get it from webhook)').first().json.Post_URL }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        16,
+        336
+      ],
+      "id": "602ce233-32b5-4cb3-a32c-592b84770e64",
+      "name": "get post if exists",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6f16ebbb-2374-484d-bcda-5584f7e3f790",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        304,
+        336
+      ],
+      "id": "a9e4d355-2b94-4e4b-ace1-de1bcd83b3bd",
+      "name": "new post?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/posts/posts/get-post-text",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "post_url",
+              "value": "={{ $('Post URL (get it from webhook)').first().json.Post_URL }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 100000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -256,
+        336
+      ],
+      "id": "3e5ddf95-71e1-4092-8c82-37ff8b4eba9d",
+      "name": "get post text",
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<post_text>\n{{ $('get post text').first().json.postText }}\n</post_text>",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Create a small summary of this LinkedIn post so it will help me to get context when I am responding to comments by other people on this post. \n\nReply only with a JSON, nothing else.\nReply strictly in this JSON format:\n\n{\n  \"post_summary\" : \"summary of my  post blah blah...\"\n}\n\nJSON SCHEMA:\n\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"post_summary\": {\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\"post_summary\"],\n  \"additionalProperties\": false\n}\n\n\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        -64
+      ],
+      "id": "48ffb61f-c86c-48c6-890b-b21187994cb2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-oss-20b",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-oss-20b"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        112
+      ],
+      "id": "ffdcaaf7-5d99-40e9-81f4-bb711b616b90",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "reKm7aNJI8ZvoZer",
+          "name": "local llm"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"post_summary\": {\n      \"type\": \"string\"\n    }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        112
+      ],
+      "id": "a99db6e8-4fcc-450b-94b6-de881f7a7280",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "fnQmhCt38PUGUG8H",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - posts list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/fnQmhCt38PUGUG8H"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Post_ID": "={{ $('Post URL (get it from webhook)').last().json.Post_URL }}",
+            "Post_Summary": "={{ $json.output.post_summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Post_ID",
+              "displayName": "Post_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Post_Summary",
+              "displayName": "Post_Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -64
+      ],
+      "id": "d4fc1081-62ac-45aa-b972-882a3d992bae",
+      "name": "insert new post"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1088,
+        336
+      ],
+      "id": "39d7b7c0-0524-45e0-8928-9824c06bc98f",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5aec9a3f-8ee5-4bc1-9efc-bfda486a900a",
+              "name": "POST_ID",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        336
+      ],
+      "id": "53335e75-3749-4368-b5d0-82c533a27e77",
+      "name": "post ID new or old"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "pFzkT72TrRwXcLYJ",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - comments list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/pFzkT72TrRwXcLYJ"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Comment_ID",
+              "keyValue": "={{ $json.commentUrn.match(/fsd_comment:\\((\\d+)/)[1] }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2448,
+        352
+      ],
+      "id": "2b0679d2-c750-4564-838b-bd2d2be543e2",
+      "name": "Get row(s)",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6f16ebbb-2374-484d-bcda-5584f7e3f790",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2688,
+        352
+      ],
+      "id": "2d79e1f6-84e8-403f-9afe-44c3ee16cc52",
+      "name": "new comment?"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "pFzkT72TrRwXcLYJ",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - comments list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/pFzkT72TrRwXcLYJ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "My_Reply_Sent": "={{ $('Loop Over Items').item.json.userId == $('Get my LN user ID').item.json.profile_id}}",
+            "Post_ID": "={{ $('post ID new or old').item.json.POST_ID }}",
+            "Post_ID_FKey": "={{ $('post ID new or old').item.json.POST_ID }}",
+            "Comment_ID": "={{ $('Loop Over Items').last().json.commentUrn.match(/fsd_comment:\\((\\d+)/)[1] }}",
+            "Commenter_Name": "={{ $('Loop Over Items').item.json.userName }}",
+            "Commenter_ID": "={{ $('Loop Over Items').item.json.userId }}",
+            "Parent_Comment_ID": "={{ $('Loop Over Items').item.json.parentCommentId }}",
+            "Comment_Text": "={{ $('Loop Over Items').item.json.commentText }}",
+            "comment_urn": "={{ $('Loop Over Items').item.json.commentUrn }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Post_ID",
+              "displayName": "Post_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comment_ID",
+              "displayName": "Comment_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Commenter_Name",
+              "displayName": "Commenter_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Commenter_ID",
+              "displayName": "Commenter_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Parent_Comment_ID",
+              "displayName": "Parent_Comment_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comment_Text",
+              "displayName": "Comment_Text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "My_reply",
+              "displayName": "My_reply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Post_ID_FKey",
+              "displayName": "Post_ID_FKey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "My_Reply_Sent",
+              "displayName": "My_Reply_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "comment_urn",
+              "displayName": "comment_urn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        2976,
+        336
+      ],
+      "id": "05dc252b-d5cf-48af-b286-fc25cc693d64",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "pFzkT72TrRwXcLYJ",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - comments list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/pFzkT72TrRwXcLYJ"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "My_Reply_Sent",
+              "condition": "isFalse"
+            },
+            {
+              "keyName": "Parent_Comment_ID",
+              "condition": "isEmpty"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        3584,
+        16
+      ],
+      "id": "748170b9-f535-47cb-afe6-671b8873d241",
+      "name": "Get all stored comments (not mine, not replied)",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "aggregate": "={{ $json.id }}",
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        3328,
+        16
+      ],
+      "id": "7034b2ac-ff02-4172-a584-2027f39efd84",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3840,
+        16
+      ],
+      "id": "9443c346-92da-4375-9551-3b8dae4fbe5c",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "pFzkT72TrRwXcLYJ",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - comments list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/pFzkT72TrRwXcLYJ"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $('Loop Over Items1').item.json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "My_Reply_Sent": true,
+            "Post_ID_FKey": "={{ $('Loop Over Items1').item.json.Post_ID_FKey }}",
+            "Post_ID": "={{ $json.Post_ID }}",
+            "Comment_ID": "={{ $('Loop Over Items1').item.json.Comment_ID }}",
+            "Commenter_Name": "={{ $('Loop Over Items1').item.json.Commenter_Name }}",
+            "Commenter_ID": "={{ $('Loop Over Items1').item.json.Commenter_ID }}",
+            "Parent_Comment_ID": "={{ $('Loop Over Items1').item.json.Parent_Comment_ID }}",
+            "Comment_Text": "={{ $('Loop Over Items1').item.json.Comment_Text }}",
+            "My_reply": "={{ $json.Comment_Text }}",
+            "comment_urn": "={{ $('Loop Over Items1').item.json.comment_urn }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Post_ID",
+              "displayName": "Post_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comment_ID",
+              "displayName": "Comment_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Commenter_Name",
+              "displayName": "Commenter_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Commenter_ID",
+              "displayName": "Commenter_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Parent_Comment_ID",
+              "displayName": "Parent_Comment_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comment_Text",
+              "displayName": "Comment_Text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "My_reply",
+              "displayName": "My_reply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Post_ID_FKey",
+              "displayName": "Post_ID_FKey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "My_Reply_Sent",
+              "displayName": "My_Reply_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "comment_urn",
+              "displayName": "comment_urn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        4672,
+        16
+      ],
+      "id": "b1da2f33-e41c-4e81-8b96-e79bf5e54833",
+      "name": "Update row(s)"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "pFzkT72TrRwXcLYJ",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - comments list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/pFzkT72TrRwXcLYJ"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Parent_Comment_ID",
+              "keyValue": "={{ $json.Comment_ID }}"
+            },
+            {
+              "keyName": "Commenter_ID",
+              "keyValue": "={{ $('Get my LN user ID').first().json.profile_id }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        4112,
+        32
+      ],
+      "id": "0705ffbe-c676-469b-a8a4-6c5079d92192",
+      "name": "get my comment reply for this comment",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1e4b0b8d-b4cd-41e4-ab8d-08dbb3eac0e1",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4352,
+        32
+      ],
+      "id": "2bc209b6-7037-4ae1-bfa6-49b942c58395",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "content": "## This is a slow endpoint (on purpose) o set a big timeout. (10000)\n\n### this protects your LN account\n\n## TIP: pin data while you are testing so you will not stress LN for nothing",
+        "height": 528,
+        "width": 336,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1424,
+        -224
+      ],
+      "typeVersion": 1,
+      "id": "86fbecc0-daa5-4866-a521-668133b4b81e",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/messages/my-id",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 100000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -496,
+        336
+      ],
+      "id": "4617bab9-f24e-4dd8-afbf-5ba1ad65ac3a",
+      "name": "Get my LN user ID",
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1328,
+        848
+      ],
+      "id": "28cb8ab6-5256-4281-8e53-306dd415458e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "content": "## This should be a webhook in a separate file.",
+        "height": 240,
+        "width": 576
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1568,
+        768
+      ],
+      "typeVersion": 1,
+      "id": "7cbca96c-3d8e-4461-919f-46f0258a2c3c",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "fnQmhCt38PUGUG8H",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - posts list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/fnQmhCt38PUGUG8H"
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        848
+      ],
+      "id": "d94bd934-655b-4b4f-a073-66ff0624ab2c",
+      "name": "get all posts from table"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -144,
+        848
+      ],
+      "id": "bd5e49fa-f9d7-4d36-97d8-b68ad5917564",
+      "name": "Loop Over Items2"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "pFzkT72TrRwXcLYJ",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - comments list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/pFzkT72TrRwXcLYJ"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Post_ID_FKey",
+              "keyValue": "={{ $json.id }}"
+            },
+            {
+              "keyName": "Parent_Comment_ID",
+              "condition": "isEmpty"
+            },
+            {
+              "keyName": "My_Reply_Sent",
+              "condition": "isFalse"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        128,
+        864
+      ],
+      "id": "04de9c39-2d37-42a5-9b45-3d42dd1d8613",
+      "name": "get unanswered comments"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get items from the specific node (replace with your actual node name)\nconst postsFromTable = $('get all posts from table').all();\nconst itemsFromLoop = $('Loop Over Items2').all();\n\nconst postsMap = {};\n\n// First, create all posts from the table data\nfor (const item of postsFromTable) {\n  const postId = item.json.id;\n  \n  if (!postsMap[postId]) {\n    postsMap[postId] = {\n      \"post_id\": postId,\n      \"post_url\": item.Post_ID,\n      \"post_summary\": item.json.Post_Summary || \"\",\n      \"comments\": []\n    };\n  }\n}\n\n// Now add all comments from the loop output\nfor (const item of itemsFromLoop) {\n  const postId = item.json.Post_ID;\n  \n  // Ensure post exists (in case loop has items not in original table)\n  if (!postsMap[postId]) {\n    postsMap[postId] = {\n      \"post_id\": postId,\n      \"post_url\": item.json.post_url || \"\",\n      \"post_summary\": item.json.Post_Summary || \"\",\n      \"comments\": []\n    };\n  }\n  \n  // Add comment if exists\n  if (item.json.Comment_ID) {\n    postsMap[postId].comments.push({\n      \"Comment_ID\": item.json.Comment_ID,\n      \"Commenter_Name\": item.json.Commenter_Name || \"\",\n      \"Comment_Text\": item.json.Comment_Text || \"\",\n      \"Comment_URN\": item.json.comment_urn || \"\"\n    });\n  }\n}\n\n// Convert map to array\nconst allPosts = Object.values(postsMap);\n\n// Return structured result\nreturn [{\n  json: {\n    posts: allPosts,\n    total_posts: allPosts.length,\n    total_comments: allPosts.reduce((sum, post) => sum + post.comments.length, 0)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        832
+      ],
+      "id": "701bc299-3b43-40ad-9de2-40d13f2348b5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "## This should be a webhook in a separate file.",
+        "height": 240,
+        "width": 576
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1568,
+        1168
+      ],
+      "typeVersion": 1,
+      "id": "49bf8f1c-a288-4c1b-ad27-a876a4c10ac7",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "path": "b6eaf1e1-3bd6-4d41-b440-131cd0043338",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1360,
+        1264
+      ],
+      "id": "66a85bc5-cdc0-4599-a41f-c4355ab6b0a7",
+      "name": "Webhook1",
+      "webhookId": "b6eaf1e1-3bd6-4d41-b440-131cd0043338"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "06cffb4a-6c09-4d4b-8248-5f4ba646069c",
+              "name": "comment_urn",
+              "value": "urn:li:fsd_comment:(7388259716818182144,urn:li:activity:7384199567258427392)",
+              "type": "string"
+            },
+            {
+              "id": "83b53daa-ffbc-4fe2-95c0-021debdd0bdb",
+              "name": "comment_reply",
+              "value": "👍",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -720,
+        1264
+      ],
+      "id": "990e605a-be92-4a0d-9959-fcf964688516",
+      "name": "comment_fields URN and Text (example)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/posts/reply-to-comment",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"comment_urn\": \"{{ $json.comment_urn }}\",\n  \"reply_text\": \"{{ $json.comment_reply }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -352,
+        1264
+      ],
+      "id": "c231e594-4a90-4b93-ad3e-b0c61c916336",
+      "name": "REPLY TO COMMENT1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "GET COMMENTS ON POST": [
+      {
+        "json": {
+          "data": [
+            {
+              "userId": "ACoAACRh_JsB_zqiZYXSZwNRzonEg7R8WU1jUVQ",
+              "userName": "Riccardo Vandra",
+              "userTitle": "AI Transformation Partner for Sales and Marketing Teams",
+              "commentText": "Hey there Vlad Centea - It'd be interesting for me to use this and test this out!",
+              "commentUrn": "urn:li:fsd_comment:(7384891653561556992,urn:li:activity:7384199567258427392)",
+              "isReply": false,
+              "parentCommentId": null,
+              "childCommentIds": [
+                "7384899590560423938"
+              ]
+            },
+            {
+              "userId": "ACoAABkVEvgBp3i06XxDrVLz2rUjmE4TqHNSPGI",
+              "userName": "Vlad Centea",
+              "userTitle": "AI solutions that scale and 99% SLA. Why? 27 years of building IT solutions. #AI #Automation #DigitalTransformation",
+              "commentText": "Olga Meaurault this week i will rep3ase it",
+              "commentUrn": "urn:li:fsd_comment:(7386825875884756992,urn:li:activity:7384199567258427392)",
+              "isReply": true,
+              "parentCommentId": "7386800955889123328",
+              "childCommentIds": null
+            },
+            {
+              "userId": "ACoAABkVEvgBp3i06XxDrVLz2rUjmE4TqHNSPGI",
+              "userName": "Vlad Centea",
+              "userTitle": "AI solutions that scale and 99% SLA. Why? 27 years of building IT solutions. #AI #Automation #DigitalTransformation",
+              "commentText": "AI Mastermind keep in touch i am nearly there with the usability part. the core is working already",
+              "commentUrn": "urn:li:fsd_comment:(7384322652066177024,urn:li:activity:7384199567258427392)",
+              "isReply": true,
+              "parentCommentId": "7384302875411140609",
+              "childCommentIds": null
+            },
+            {
+              "userId": "ACoAAA-3Xs8BxrQCQM_E7rYKu_UvCh2iSxAEW3U",
+              "userName": "Magdalena Orascanin",
+              "userTitle": "I train HR Teams on how to use AI - Strategically, Ethically & Profitably | HR Consultant | Corporate AI Trainer | Interim HR | Strategic Advisor | Keynote Speaker & Course Creator | Host ‘Tomorrow HR’ Podcast",
+              "commentText": "This could be very useful for the case we discussed last week. Cant wait to find out more 😇",
+              "commentUrn": "urn:li:fsd_comment:(7384316434593779712,urn:li:activity:7384199567258427392)",
+              "isReply": false,
+              "parentCommentId": null,
+              "childCommentIds": [
+                "7384322403457241088"
+              ]
+            },
+            {
+              "userId": "ACoAABkVEvgBp3i06XxDrVLz2rUjmE4TqHNSPGI",
+              "userName": "Vlad Centea",
+              "userTitle": "AI solutions that scale and 99% SLA. Why? 27 years of building IT solutions. #AI #Automation #DigitalTransformation",
+              "commentText": "Alastair Town PSM APMG of course, I will post updates.... Now is functional, but i am still working on the \"usability\" bit.... and to make it easy to install....\nAlso i am waiting for the the extension to be approved in the store, because otherwise people have to install it in dev mode as unpacked... other headache... ",
+              "commentUrn": "urn:li:fsd_comment:(7384271057848901632,urn:li:activity:7384199567258427392)",
+              "isReply": true,
+              "parentCommentId": "7384260857456766977",
+              "childCommentIds": null
+            },
+            {
+              "userId": "ACoAABkVEvgBp3i06XxDrVLz2rUjmE4TqHNSPGI",
+              "userName": "Vlad Centea",
+              "userTitle": "AI solutions that scale and 99% SLA. Why? 27 years of building IT solutions. #AI #Automation #DigitalTransformation",
+              "commentText": "Magdalena Orascanin happy to tell and show you more",
+              "commentUrn": "urn:li:fsd_comment:(7384322403457241088,urn:li:activity:7384199567258427392)",
+              "isReply": true,
+              "parentCommentId": "7384316434593779712",
+              "childCommentIds": null
+            },
+            {
+              "userId": "ACoAAABwjSQBiHKa0nJ4oO7v0WaDky8mNiYi8g8",
+              "userName": "Casius Morea",
+              "userTitle": "Email OS for Enterprises: A New Category defined by EmailTree.AI",
+              "commentText": "Today we must build around privacy first. Keep me updated please 🙏. Very curious to put this at work. Thanks",
+              "commentUrn": "urn:li:fsd_comment:(7384434763182424064,urn:li:activity:7384199567258427392)",
+              "isReply": false,
+              "parentCommentId": null,
+              "childCommentIds": [
+                "7384449850127392768"
+              ]
+            },
+            {
+              "userId": "ACoAABkVEvgBp3i06XxDrVLz2rUjmE4TqHNSPGI",
+              "userName": "Vlad Centea",
+              "userTitle": "AI solutions that scale and 99% SLA. Why? 27 years of building IT solutions. #AI #Automation #DigitalTransformation",
+              "commentText": "Riccardo Vandra very soon very soon. \ni am working on the best way to ship this with reasonable usability. \nwill still be an expert tool but i want it to be easy to digest",
+              "commentUrn": "urn:li:fsd_comment:(7384899590560423938,urn:li:activity:7384199567258427392)",
+              "isReply": true,
+              "parentCommentId": "7384891653561556992",
+              "childCommentIds": null
+            },
+            {
+              "userId": "ACoAAAA1rtMBGV_1D3hP86B71gEtgMfeUAzrx1I",
+              "userName": "Lawrence Ng",
+              "userTitle": "$150mn Bootstrapped Exit ‘08 | E&Y Entrepreneur of the Yr '07 | ContactLoop Convo AI > Always on, Always talking. ♾️💡♾️🗣️",
+              "commentText": "Vlad Centea launching your own tool sounds like a smart move, way to go.. it's great to see you taking control of your data security. ",
+              "commentUrn": "urn:li:fsd_comment:(7384854873177153536,urn:li:activity:7384199567258427392)",
+              "isReply": false,
+              "parentCommentId": null,
+              "childCommentIds": [
+                "7384858371255898113"
+              ]
+            },
+            {
+              "userId": "ACoAAApv_lABhi1Wwo42owiqTrrpTozoMTbgxmY",
+              "userName": "Sabrina Ramonov 🍄",
+              "userTitle": "Teach 10M people AI 🔥 Blotato.com | Scalable Content Systems",
+              "commentText": "interested",
+              "commentUrn": "urn:li:fsd_comment:(7384232798628483072,urn:li:activity:7384199567258427392)",
+              "isReply": false,
+              "parentCommentId": null,
+              "childCommentIds": [
+                "7384237841658118144",
+                "7384257854150496256",
+                "7384270335657013249"
+              ]
+            },
+            {
+              "userId": "ACoAAAp92toBl9WAOVtIOW9GcDncQbOMynRNnPI",
+              "userName": "Olga Meaurault",
+              "userTitle": "Fractional Head of Marketing at Cascade | Growth Marketeer for Luxembourgish Startups and Scaleups | ex-Amazon | President of LACI asbl - Luxembourg Association of Hearing Impaired People with CI (NGO)",
+              "commentText": "This is superb idea, Vlad Centea 👏 I  would love to try early access and I will be happy to share the results with my Linkedin network",
+              "commentUrn": "urn:li:fsd_comment:(7386800955889123328,urn:li:activity:7384199567258427392)",
+              "isReply": false,
+              "parentCommentId": null,
+              "childCommentIds": [
+                "7386825875884756992"
+              ]
+            },
+            {
+              "userId": "ACoAABkVEvgBp3i06XxDrVLz2rUjmE4TqHNSPGI",
+              "userName": "Vlad Centea",
+              "userTitle": "AI solutions that scale and 99% SLA. Why? 27 years of building IT solutions. #AI #Automation #DigitalTransformation",
+              "commentText": "Aemal Sayer Max Tkacz n8n  soon making also the n8n nodes for it, hope to get it eventually as official nodes... until then thanks for the inspiration. ",
+              "commentUrn": "urn:li:fsd_comment:(7384200563569381376,urn:li:activity:7384199567258427392)",
+              "isReply": false,
+              "parentCommentId": null,
+              "childCommentIds": null
+            },
+            {
+              "userId": "ACoAABkVEvgBp3i06XxDrVLz2rUjmE4TqHNSPGI",
+              "userName": "Vlad Centea",
+              "userTitle": "AI solutions that scale and 99% SLA. Why? 27 years of building IT solutions. #AI #Automation #DigitalTransformation",
+              "commentText": "Sabrina Ramonov 🍄 great, actually I do target people who are builders in the first place and content creators in the automation and AI apps building space.\n\nI will make a workshop next week with a group of people, explaining how it works how it is build and how to deploy and use it. \nRight now it is rough on the edges. \nI will also give early access to these people first.\n",
+              "commentUrn": "urn:li:fsd_comment:(7384237841658118144,urn:li:activity:7384199567258427392)",
+              "isReply": true,
+              "parentCommentId": "7384232798628483072",
+              "childCommentIds": null
+            },
+            {
+              "userId": "ACoAAE6NWVkBs_w9UHFzV8oRIt_9bFJxdXlAEVM",
+              "userName": "Vlad Centea",
+              "userTitle": "--",
+              "commentText": "👍 ",
+              "commentUrn": "urn:li:fsd_comment:(7388259716818182144,urn:li:activity:7384199567258427392)",
+              "isReply": false,
+              "parentCommentId": null,
+              "childCommentIds": null
+            },
+            {
+              "userId": "ACoAABkVEvgBp3i06XxDrVLz2rUjmE4TqHNSPGI",
+              "userName": "Vlad Centea",
+              "userTitle": "AI solutions that scale and 99% SLA. Why? 27 years of building IT solutions. #AI #Automation #DigitalTransformation",
+              "commentText": "Lawrence Ng and will be on the n8n model, open source self hosted and also cloud and also self provisioning on private cloud\n",
+              "commentUrn": "urn:li:fsd_comment:(7384858371255898113,urn:li:activity:7384199567258427392)",
+              "isReply": true,
+              "parentCommentId": "7384854873177153536",
+              "childCommentIds": null
+            },
+            {
+              "userId": "ACoAAF2GtDwBv9f8h8ftnSgPfzIWmsEumgRqnmA",
+              "userName": "AI Mastermind",
+              "userTitle": "Helping businesses implement AI Automations with measurable results | ex-Software Developer | AI Automation Developer | Book a free discovery call to find out how AI can help grow your business",
+              "commentText": "Looks awesome! Definitely interested",
+              "commentUrn": "urn:li:fsd_comment:(7384302875411140609,urn:li:activity:7384199567258427392)",
+              "isReply": false,
+              "parentCommentId": null,
+              "childCommentIds": [
+                "7384322652066177024"
+              ]
+            },
+            {
+              "userId": "ACoAABkVEvgBp3i06XxDrVLz2rUjmE4TqHNSPGI",
+              "userName": "Vlad Centea",
+              "userTitle": "AI solutions that scale and 99% SLA. Why? 27 years of building IT solutions. #AI #Automation #DigitalTransformation",
+              "commentText": "Casius of course. It is functional already but i am working on the deployment part.Not to make it perfect but to make it a biit less of a headache",
+              "commentUrn": "urn:li:fsd_comment:(7384449850127392768,urn:li:activity:7384199567258427392)",
+              "isReply": true,
+              "parentCommentId": "7384434763182424064",
+              "childCommentIds": null
+            },
+            {
+              "userId": "ACoAAApv_lABhi1Wwo42owiqTrrpTozoMTbgxmY",
+              "userName": "Sabrina Ramonov 🍄",
+              "userTitle": "Teach 10M people AI 🔥 Blotato.com | Scalable Content Systems",
+              "commentText": "Vlad Centea cant you just release it open source on github?",
+              "commentUrn": "urn:li:fsd_comment:(7384257854150496256,urn:li:activity:7384199567258427392)",
+              "isReply": true,
+              "parentCommentId": "7384232798628483072",
+              "childCommentIds": null
+            },
+            {
+              "userId": "ACoAAC3eMUwBxk0ma45BovcGtHLuO79NXW04RoA",
+              "userName": "Alastair Town PSM APMG",
+              "userTitle": "Ideate, Iterate, Execute.",
+              "commentText": "I can't add much value from a technical perspective but this could be hugely useful for SME's or founders looking for proof of concept by connecting them with relevant customers - keep me posted! ",
+              "commentUrn": "urn:li:fsd_comment:(7384260857456766977,urn:li:activity:7384199567258427392)",
+              "isReply": false,
+              "parentCommentId": null,
+              "childCommentIds": [
+                "7384271057848901632"
+              ]
+            },
+            {
+              "userId": "ACoAABkVEvgBp3i06XxDrVLz2rUjmE4TqHNSPGI",
+              "userName": "Vlad Centea",
+              "userTitle": "AI solutions that scale and 99% SLA. Why? 27 years of building IT solutions. #AI #Automation #DigitalTransformation",
+              "commentText": "Sabrina Ramonov 🍄 of course I will do that anyway. \nBut now it is very very alpha... and i need to do more \"clean-up\" .... \nand a bit more to make it easier to install (i am working to the docker image but i also have other ideas)\n\nIf i make now the repo public, without any help people will find it complicated to install....\n\nAlso has to ways of working (one with a reverse proxy in the extension and one with server only)... which i also have to document ... ",
+              "commentUrn": "urn:li:fsd_comment:(7384270335657013249,urn:li:activity:7384199567258427392)",
+              "isReply": true,
+              "parentCommentId": "7384232798628483072",
+              "childCommentIds": null
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Post URL (get it from webhook)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET COMMENTS ON POST": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post URL (get it from webhook)": {
+      "main": [
+        [
+          {
+            "node": "Get my LN user ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get post if exists": {
+      "main": [
+        [
+          {
+            "node": "new post?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get post text": {
+      "main": [
+        [
+          {
+            "node": "get post if exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "new post?": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "insert new post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insert new post": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "post ID new or old",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "post ID new or old": {
+      "main": [
+        [
+          {
+            "node": "GET COMMENTS ON POST",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "new comment?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "new comment?": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Get all stored comments (not mine, not replied)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all stored comments (not mine, not replied)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "get my comment reply for this comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get my comment reply for this comment": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row(s)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get my LN user ID": {
+      "main": [
+        [
+          {
+            "node": "get post text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "get all posts from table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get all posts from table": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get unanswered comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get unanswered comments": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "comment_fields URN and Text (example)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "comment_fields URN and Text (example)": {
+      "main": [
+        [
+          {
+            "node": "REPLY TO COMMENT1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "abc6133e-a6c7-438b-ad4d-59a22ba3ba61",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a8857fe3bb042a7e3e59271e27b02da0b59a8affaaa1bbc373002233658b61cf"
+  },
+  "id": "GQRUF8Jj3ZBuGXPb",
+  "tags": []
+}

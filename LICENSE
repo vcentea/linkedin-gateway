@@ -1,0 +1,57 @@
+Sustainable Use License
+
+Copyright (c) 2024-2025 LinkedIn Gateway Contributors
+
+## Permissions
+
+You are granted the rights to:
+
+1. **Use**: Use the software for any internal business purpose, including but not limited to development, testing, and production environments within your organization.
+
+2. **Modify**: Modify the source code to suit your needs, including creating derivative works.
+
+3. **Distribute**: Distribute the original or modified software, provided that you include this license and copyright notice with all copies or substantial portions of the software.
+
+4. **Self-Host**: Deploy and run the software on your own infrastructure for your organization's internal use.
+
+5. **Consulting and Support**: Offer consulting, support, training, or other professional services related to the software without requiring a separate license.
+
+## Restrictions
+
+You are **NOT** permitted to:
+
+1. **Commercial Hosting**: Offer the software, or a substantially similar service based on the software, as a hosted or managed service to third parties without obtaining a separate commercial license from the copyright holders.
+
+2. **Embedding in SaaS**: Embed the software into a commercial product or service that you offer to third parties as a software-as-a-service (SaaS) offering without a commercial license.
+
+3. **Competitive Use**: Use the software to build, operate, or provide a service that competes with the commercial offerings of the copyright holders.
+
+## Clarifications
+
+- **Internal Use**: You may use the software for your organization's internal operations, regardless of the size of your organization.
+
+- **Client Deployments**: Consultants and agencies may deploy the software for their clients as part of professional services, provided the deployment is for the client's internal use and not offered as a hosted service.
+
+- **Open Source Contributions**: Contributions to the project are welcomed and encouraged. By contributing, you agree that your contributions will be licensed under this same license.
+
+- **Commercial Licenses**: If you wish to use the software in ways not permitted by this license, please contact the copyright holders to discuss commercial licensing options.
+
+## Disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Additional Notes
+
+This is a **source-available** license, not an open-source license as defined by the Open Source Initiative (OSI). While the source code is freely available, the restrictions on commercial use mean it does not meet the OSI's definition of open source.
+
+This license aims to balance:
+- **Community Freedom**: Allowing individuals and organizations to use, modify, and self-host the software freely
+- **Sustainability**: Protecting the project's ability to fund continued development through commercial offerings
+- **Fairness**: Preventing large companies from commercializing the work without contributing back
+
+For more information about fair-code licensing, see: https://faircode.io
+
+---
+
+**Contact for Commercial Licensing:**
+For inquiries about commercial licenses, enterprise support, or partnership opportunities, please contact: [your contact information]

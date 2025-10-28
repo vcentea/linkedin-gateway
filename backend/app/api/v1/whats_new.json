@@ -1,0 +1,27 @@
+[
+  {
+    "version": "0.2.1",
+    "date": "2025-01-17",
+    "title": "Please Read Before Using",
+    "description": "DM on linkedin for feedback: https://www.linkedin.com/in/vlad-centea/",
+    "highlights": [
+      "Linkedin calls via backend work just for private servers",
+      "For public servers, only proxy mode (browser extension) is supported for linkedin calls",
+      "If you use the public main server keep the browser extension active",
+      "If you get errors Linkedin cookies might be expired so make sure you have a linkedin tab in the browser and the extenssion shows linkedin connected with green. You will be good for a while again."
+    ]
+  },
+  {
+    "version": "0.1.5",
+    "date": "2025-01-10",
+    "title": "LinkedIn API Enhancements",
+    "description": "Improved LinkedIn API integration and performance",
+    "highlights": [
+      "Faster profile scraping",
+      "Better error handling for rate limits",
+      "Enhanced connection request management"
+    ]
+  }
+]
+
+
