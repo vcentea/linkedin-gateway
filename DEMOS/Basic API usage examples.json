@@ -1,0 +1,702 @@
+{
+  "name": "Basic API usage examples",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        32
+      ],
+      "id": "55fc48fa-5a1b-4d8f-8c17-2bc45430d5b1",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/feed/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "start_index",
+              "value": "0"
+            },
+            {
+              "name": "count",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -448,
+        32
+      ],
+      "id": "0c963684-625c-4fe6-a36d-a579f7e8bf41",
+      "name": "GET POSTS FROM MY FEED",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/posts/get-commenters",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "num_replies",
+              "value": "1"
+            },
+            {
+              "name": "count",
+              "value": "10"
+            },
+            {
+              "name": "post_url",
+              "value": "={{ $json.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        96,
+        32
+      ],
+      "id": "7adfe9ac-1cb9-4a96-9aaa-039cdd996460",
+      "name": "GET COMMENTS ON POST",
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/posts/reply-to-comment",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"comment_urn\": \"{{ $json.data[3].commentUrn }}\",\n  \"reply_text\": \"...\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        96,
+        -464
+      ],
+      "id": "9d0537a9-84f9-473b-b409-0d0d6c0b3cd6",
+      "name": "REPLY TO COMMENT",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/profiles/experiences",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "profile_id",
+              "value": "={{ $('GET COMMENTS ON POST').item.json.data[0].userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        -192
+      ],
+      "id": "bcb3c181-f1be-4984-a57b-b92fee075536",
+      "name": "GET PROFILE experience SECTION",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/profiles/identity",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "profile_id",
+              "value": "={{ $('GET COMMENTS ON POST').item.json.data[0].userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        -416
+      ],
+      "id": "0eb0e327-d100-49f1-8893-f989136bfb69",
+      "name": "GET PROFILE identity SECTION2",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/posts/profile-posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "profile_id",
+              "value": "={{ $('GET COMMENTS ON POST').item.json.data[0].userId }}"
+            },
+            {
+              "name": "count",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        16
+      ],
+      "id": "a25fa6dc-5b3a-4212-9844-66e69099c65b",
+      "name": "GET PROFILE posts SECTION1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/profiles/about-skills",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "profile_id",
+              "value": "={{ $('GET COMMENTS ON POST').item.json.data[0].userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        224
+      ],
+      "id": "b59dc4d1-d0a5-4c6e-9b76-cc1e5afda8db",
+      "name": "GET PROFILE about and skills SECTIONs",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/profiles/recommendations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "profile_id",
+              "value": "={{ $('GET COMMENTS ON POST').item.json.data[0].userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        432
+      ],
+      "id": "14030353-2a35-4af9-b719-2686e6ea3a99",
+      "name": "GET PROFILE recommendations SECTION",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/posts/post-comment",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "comment_text",
+              "value": "👍"
+            },
+            {
+              "name": "post_url",
+              "value": "={{ $json.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        96,
+        -224
+      ],
+      "id": "038c9382-f210-45ee-90b6-5bfaa217bd08",
+      "name": "COMMENT ON POST",
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/connections/simple",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "profile_id",
+              "value": "={{ $('GET COMMENTS ON POST').item.json.data[0].userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        -464
+      ],
+      "id": "b0191fb0-d2c9-48e8-9fa0-df0c1e11e991",
+      "name": "CONNECTION REQUEST simple",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/connections/with-message",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "profile_id",
+              "value": "={{ $('GET COMMENTS ON POST').item.json.data[0].userId }}"
+            },
+            {
+              "name": "message",
+              "value": "\"Hello\""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        -240
+      ],
+      "id": "4cace340-8840-4249-930b-0c28bf8c98e4",
+      "name": "CONNECTION REQUEST with message",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/profiles/contact",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "profile_id",
+              "value": "={{ $('GET COMMENTS ON POST').item.json.data[0].userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        672
+      ],
+      "id": "7b68adf4-72fb-4e61-ba36-f3e20d56a0d4",
+      "name": "GET PROFILE contact SECTION1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/messages/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "profile_id",
+              "value": "=https://www.linkedin.com/in/vlad-centea-821435309/"
+            },
+            {
+              "name": "message_text",
+              "value": "Hello"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        -16
+      ],
+      "id": "0d274653-63d0-4d68-8f91-39589e21f8ab",
+      "name": "DIRECT MESSAGE",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/feed/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"start_index\": \"0\",\n  \"count\": \"10\",\n  \"server_call\": true\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -432,
+        -400
+      ],
+      "id": "92cfd2ce-903b-45d6-9503-97c79d2db041",
+      "name": "GET POSTS FROM MY FEED - SERVER EXECUTED",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# server_call=true example \n# This will route the call to linkedin from YOUR server.\n## Work only on self hosted versions\n## this parameter is available for all APIs",
+        "height": 448,
+        "width": 880
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1040,
+        -640
+      ],
+      "typeVersion": 1,
+      "id": "58dc0efb-04a6-42be-90c2-c418e5f4f345",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# Comments APIs",
+        "height": 848,
+        "width": 352,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -16,
+        -624
+      ],
+      "typeVersion": 1,
+      "id": "9e3dde14-a797-45c9-a556-963cb5f4de7c",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# Feed API",
+        "height": 368,
+        "width": 464,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -624,
+        -112
+      ],
+      "typeVersion": 1,
+      "id": "33958c13-0b55-4c2e-8510-e382e3858471",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# Connection and DM APIs",
+        "height": 848,
+        "width": 352,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        528,
+        -624
+      ],
+      "typeVersion": 1,
+      "id": "b66d69a4-e9e1-4700-8757-2392dbec71de",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "# PROFILE APIs",
+        "height": 1680,
+        "width": 352,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1040,
+        -640
+      ],
+      "typeVersion": 1,
+      "id": "d480c4be-276a-4294-ab9b-1e7ae55776bc",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "# QUICK START:\n\n\n## EASY MODE (via browser requests):\n\n### - download the Chrome Extension: https://chromewebstore.google.com/detail/dhfnemkiicglblkihhlaghjjpfbfeaeo?utm_source=item-share-cb\n\n### Make sure you have a Linkedin Tab open in the browser with the extenssion\n\n### Login and generate an API key\n\n### IMPORTANT: all the requests will be routed to your browser extension. If you close the browser, the extension or the linkedin tab, the API will not work anymore.  \n\n\n## ADVANCED MODE (server requests):\n\n### You need to deploy your own backend from here: https://github.com/vcentea/linkedin-gateway\n\n### You still need to install the extension from the store, or just \"load unpacked\" from the source\n\n### You can use local users if you don't know how to setup LinkedIn oauth (though it is supported)\n\n### in the extension choose Custom Server and point to your own server\n\n### IMPORTANT: you can now use the \"server_call=true\" parameter and make all the calls via your server. This means that after the initial setup, the server will remember your credentials, so you can close the browser. HOWEVER the router via the browser still works if you do not use the server parameter. \n\n### IMPORANT TOO: it can be that if you go into the exact session of linkedin that you used for the initial setup when you first connected to the server and generated the API KEY, Linkedin will erase the session so the server calls will not work anymore. WHEN THIS HAPPENS YOU HAVE TO LOGIN INTO THE EXTENSSION AGAIN MAKING SURE A LINKEDIN TAB IS OPEN IN THE BROWSER. THE EXTENSSION WILL AUTOMATICALLY TAKE THE SESSION AND FORWARD IT TO THE SERVER SO YOU WILL BE ABLE TO USE THE SERVER CALLS AGAIN. \n\n\n",
+        "height": 1104,
+        "width": 768,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1904,
+        -640
+      ],
+      "typeVersion": 1,
+      "id": "10a36724-3ca9-452b-af40-47217e498e39",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/messages/my-id",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 100000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -480,
+        576
+      ],
+      "id": "2510639c-f36a-4643-a788-6510652b7916",
+      "name": "Get my ID",
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Get MY ID",
+        "height": 368,
+        "width": 464,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -640,
+        464
+      ],
+      "typeVersion": 1,
+      "id": "38e66c38-a8f6-470f-b661-a0bcb678976c",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "# Free and open source linkedin API used in this flow:\n\n## All Links together in one place and other demos: https://ainnovate.tech/tools.html\n\n## GIT: https://github.com/vcentea/linkedin-gateway  (backend and extension included)\n\n## The chrome extension:  https://chromewebstore.google.com/detail/linkedin-gateway/dhfnemkiicglblkihhlaghjjpfbfeaeo?utm_source=item-share-cb\n\n##  *You can start fast just by installing the extension and using the free public server.*\n\n## *Then you can install your own private one.*",
+        "height": 448,
+        "width": 1040,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1920,
+        560
+      ],
+      "typeVersion": 1,
+      "id": "149d51e3-1773-4e88-8979-b4753433263e",
+      "name": "Sticky Note7"
+    }
+  ],
+  "pinData": {
+    "Get my ID": [
+      {
+        "json": {
+          "success": true,
+          "profile_id": "ACoAABkVEvgBp3i06XxDrVLz2rUjmE4TqHNSPGI"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "GET POSTS FROM MY FEED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET POSTS FROM MY FEED": {
+      "main": [
+        [
+          {
+            "node": "GET COMMENTS ON POST",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET COMMENTS ON POST": {
+      "main": [
+        []
+      ]
+    },
+    "REPLY TO COMMENT": {
+      "main": [
+        []
+      ]
+    },
+    "GET PROFILE experience SECTION": {
+      "main": [
+        []
+      ]
+    },
+    "GET PROFILE posts SECTION1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "12c4f33a-9e95-444a-b5c2-c02b47b012ab",
+  "meta": {
+    "instanceId": "a8857fe3bb042a7e3e59271e27b02da0b59a8affaaa1bbc373002233658b61cf"
+  },
+  "id": "7zVB1j67n3E79E4o",
+  "tags": []
+}

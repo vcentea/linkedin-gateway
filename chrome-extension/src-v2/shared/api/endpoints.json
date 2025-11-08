@@ -1,0 +1,118 @@
+[
+  {
+    "name": "Request LinkedIn Feed",
+    "endpoint": "/api/v1/posts/request-feed",
+    "method": "POST",
+    "localTestUtility": "fetchPostsFromFeed",
+    "params": [
+      { "name": "start_index", "type": "number", "required": true, "default": 0 },
+      { "name": "count", "type": "number", "required": true, "default": 10 }
+    ],
+    "expectedResponse": "[{\"id\": int, \"postid\": string, \"url\": string, \"postcontent\": string, \"reactions\": int, \"comments\": int, \"author\": {\"name\": string, \"jobtitle\": string}, ...}]"
+  },
+  {
+    "name": "Get Commenters",
+    "endpoint": "/api/v1/posts/get-commenters",
+    "method": "POST",
+    "localTestUtility": "fetchCommentersForPost",
+    "params": [
+      { 
+        "name": "post_url", 
+        "type": "text", 
+        "required": true, 
+        "description": "The full URL of the LinkedIn post."
+      },
+      {
+        "name": "start",
+        "type": "number",
+        "required": false,
+        "default": 0,
+        "description": "Starting index for pagination."
+      },
+      {
+        "name": "count",
+        "type": "number",
+        "required": false,
+        "default": 10,
+        "description": "Number of comments to fetch in the batch."
+      },
+      {
+        "name": "num_replies",
+        "label": "Number of Replies",
+        "type": "number",
+        "required": false,
+        "default": 1,
+        "description": "Number of replies to fetch per comment."
+      }
+    ],
+    "expectedResponse": "[{\"userId\": string, \"userName\": string, \"userTitle\": string, \"commentText\": string}]"
+  },
+  {
+    "name": "Get Profile Posts",
+    "endpoint": "/api/v1/posts/profile-posts",
+    "method": "POST",
+    "localTestUtility": "fetchPostsForProfile",
+    "params": [
+      { 
+        "name": "profile_id", 
+        "type": "text", 
+        "required": true, 
+        "description": "The LinkedIn profile ID (e.g., ACoAAAKGenkB35cm2-J9PCRudJry_IOtwWCS40k) OR profile URL (e.g., https://www.linkedin.com/in/username/)."
+      },
+      {
+        "name": "count",
+        "type": "number",
+        "required": false,
+        "default": 10,
+        "max": 500,
+        "description": "Total number of posts to retrieve (will paginate automatically in chunks of 20, max 500)."
+      }
+    ],
+    "expectedResponse": "{\"posts\": [{\"postId\": string, \"postUrl\": string, \"authorName\": string, \"postContent\": string, \"likes\": int, \"comments\": int, ...}], \"hasMore\": boolean, \"paginationToken\": string|null}"
+  },
+  {
+    "name": "Scrape Profile",
+    "endpoint": "/api/v1/profiles/scrape",
+    "method": "POST",
+    "serverOnly": true,
+    "params": [
+      { 
+        "name": "profile_id", 
+        "type": "text", 
+        "required": true, 
+        "description": "The LinkedIn profile ID (e.g., ACoAACMM5dYB...) OR profile URL (e.g., https://www.linkedin.com/in/username/). Returns basic profile info (no experiences or recommendations)."
+      }
+    ],
+    "expectedResponse": "{\"linkedin_id\": string, \"vanity_name\": string, \"profile_url\": string, \"name\": string, \"firstName\": string, \"lastName\": string, \"headline\": string, \"con_degree\": string, \"location\": string, \"about\": string, \"skills\": [string], \"email\": string, \"phone\": string, \"website\": string, \"birthday\": string, \"connected_date\": string, \"follower_count\": int}"
+  },
+  {
+    "name": "Scrape Profile Experiences",
+    "endpoint": "/api/v1/profiles/experiences",
+    "method": "POST",
+    "serverOnly": true,
+    "params": [
+      { 
+        "name": "profile_id", 
+        "type": "text", 
+        "required": true, 
+        "description": "The LinkedIn profile ID (e.g., ACoAACMM5dYB...) OR profile URL (e.g., https://www.linkedin.com/in/username/)."
+      }
+    ],
+    "expectedResponse": "{\"experiences\": [{\"company\": string, \"role\": string, \"time_duration\": string, \"time_period\": string, \"duration\": string, \"description\": string}]}"
+  },
+  {
+    "name": "Scrape Profile Recommendations",
+    "endpoint": "/api/v1/profiles/recommendations",
+    "method": "POST",
+    "serverOnly": true,
+    "params": [
+      { 
+        "name": "profile_id", 
+        "type": "text", 
+        "required": true, 
+        "description": "The LinkedIn profile ID (e.g., ACoAACMM5dYB...) OR profile URL (e.g., https://www.linkedin.com/in/username/)."
+      }
+    ],
+    "expectedResponse": "{\"recommendations\": [string]}"
+  }
+] 

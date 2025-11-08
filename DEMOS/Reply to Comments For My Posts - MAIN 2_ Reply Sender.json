@@ -1,0 +1,535 @@
+{
+  "name": "Reply to Comments For My Posts - MAIN 2: Reply Sender",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# BEST PRACTICE. IMPORTANT !!!!\n\n## 1. Always use \"execute only once\" on Linkedin API nodes !\n\n### This way if by mistake you are putting this node after a node that outputs 100 elements you avoid upsetting the Linkedin Rate Limits and endangering your account.\n\n## 2. Use \"PIN data\" while you are testing, \n\n### To avoid calling Linkedin API many times and rising suspicion on your account.\n\n## 3. Use \"Wait\" nodes between calls with Random values\n\n### This way you simulate human like behavior\n\n## 4. For \"paginated\" functions like \"get comments\" or \"get posts for profile\" Use the delay parameters\n\n### This types of functions are getting large amount of data so we have to simulate human behavior. \n\n### You have 2 additional params in these functions. Example: \"min_delay\": \"2\",\n  \"max_delay\": \"5\"). These will randomize the delay, simulating a human that is clicking on \"show more comments\" on the page.\n",
+        "height": 608,
+        "width": 1136,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -512,
+        -208
+      ],
+      "typeVersion": 1,
+      "id": "c6c582f4-02b1-4506-bd15-7678cadefc49",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Always put a random delay before a linkedin node or in a loop that has a linkedin call. ",
+        "height": 336,
+        "width": 832
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        784,
+        320
+      ],
+      "typeVersion": 1,
+      "id": "13942b7a-2a05-4f97-a4e5-0b31be5bec18",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://lg.ainnovate.tech/api/v1/posts/reply-to-comment",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"comment_urn\": \"{{ $json.comment_urn }}\",\n  \"reply_text\": \"{{ $('if reply was filled in').item.json['My Reply'] }}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        496
+      ],
+      "id": "69598c74-f154-4328-a4a5-172dd56831d1",
+      "name": "REPLY TO COMMENT1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DlaFBegnfyPD4mD9",
+          "name": "linkedin gateway demo prod"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -496,
+        496
+      ],
+      "id": "32822b07-9b80-48df-b9d4-6b52a52bce5f",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/15y1YaY1Z6eZqo2X-HPizaPqD6yd0wcvRFIXG7B0xyvQ/edit?gid=1087902830#gid=1087902830",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1087902830,
+          "mode": "list",
+          "cachedResultName": "Waiting For Reply",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15y1YaY1Z6eZqo2X-HPizaPqD6yd0wcvRFIXG7B0xyvQ/edit#gid=1087902830"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -272,
+        496
+      ],
+      "id": "f1fe3d02-450e-41d1-8e3b-a8cea74750ca",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6hO4xH1L3ItSQtXQ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        32,
+        496
+      ],
+      "id": "452688ea-abc9-42d4-99d5-afe772539349",
+      "name": "Loop Over Items2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b18173a1-f152-4d42-aa4f-6a1441c59803",
+              "leftValue": "={{ $json['My Reply'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        512
+      ],
+      "id": "529ab33f-4213-4736-b376-bf38420b33fe",
+      "name": "if reply was filled in"
+    },
+    {
+      "parameters": {
+        "amount": "={{ 30 + Math.random() * 30 }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1488,
+        496
+      ],
+      "id": "7a8ac562-d528-4677-b9be-1ad8a17aa906",
+      "name": "wait a random amount to protect your account",
+      "webhookId": "54706b52-425b-4352-9709-efd869e0e6b7"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "pFzkT72TrRwXcLYJ",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - comments list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/pFzkT72TrRwXcLYJ"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Comment_ID",
+              "keyValue": "={{ $json.CommentID }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        608,
+        496
+      ],
+      "id": "5b34f6d7-9be8-43fe-83d7-4347e83610c4",
+      "name": "Get row(s)1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "pFzkT72TrRwXcLYJ",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - comments list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/pFzkT72TrRwXcLYJ"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Comment_ID",
+              "keyValue": "={{ $('Get row(s)1').item.json.Comment_ID }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "My_Reply_Sent": true,
+            "Post_ID": "={{ $('Get row(s)1').item.json.Post_ID }}",
+            "Comment_ID": "={{ $('Get row(s)1').item.json.Comment_ID }}",
+            "Commenter_Name": "={{ $('Get row(s)1').item.json.Commenter_Name }}",
+            "Commenter_ID": "={{ $('Get row(s)1').item.json.Commenter_ID }}",
+            "Parent_Comment_ID": "={{ $('Get row(s)1').item.json.Parent_Comment_ID }}",
+            "Comment_Text": "={{ $('Get row(s)1').item.json.Comment_Text }}",
+            "My_reply": "={{ $('if reply was filled in').item.json['My Reply'] }}",
+            "Post_ID_FKey": "={{ $('Get row(s)1').item.json.Post_ID_FKey }}",
+            "comment_urn": "={{ $('Get row(s)1').item.json.comment_urn }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Post_ID",
+              "displayName": "Post_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comment_ID",
+              "displayName": "Comment_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Commenter_Name",
+              "displayName": "Commenter_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Commenter_ID",
+              "displayName": "Commenter_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Parent_Comment_ID",
+              "displayName": "Parent_Comment_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comment_Text",
+              "displayName": "Comment_Text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "My_reply",
+              "displayName": "My_reply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Post_ID_FKey",
+              "displayName": "Post_ID_FKey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "My_Reply_Sent",
+              "displayName": "My_Reply_Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "comment_urn",
+              "displayName": "comment_urn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        496
+      ],
+      "id": "2c115873-515b-40d7-a98e-44bb7cad2161",
+      "name": "Update row(s)1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "fd1glsGMsW2gKttR",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/fd1glsGMsW2gKttR",
+          "cachedResultName": "Reply to Comments For My Posts - FUNCTION: Refresh Sheet"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1888,
+        496
+      ],
+      "name": "Call Reply to Comments For My Posts - Function: Refresh Sheet",
+      "id": "e3ab88b3-07ae-4cf3-9c0c-e406a7268e56",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "content": "## Refresh the Sheet",
+        "height": 336,
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1824,
+        320
+      ],
+      "typeVersion": 1,
+      "id": "d5c62afc-6f6d-4d45-8dff-c0c63002c051",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "# Free and open source linkedin API used in this flow:\n\n## All Links together in one place and other demos: https://ainnovate.tech/tools.html\n\n## GIT: https://github.com/vcentea/linkedin-gateway  (backend and extension included)\n\n## The chrome extension:  https://chromewebstore.google.com/detail/linkedin-gateway/dhfnemkiicglblkihhlaghjjpfbfeaeo?utm_source=item-share-cb\n\n##  *You can start fast just by installing the extension and using the free public server.*\n\n## *Then you can install your own private one.*",
+        "height": 448,
+        "width": 1040,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        752,
+        -416
+      ],
+      "typeVersion": 1,
+      "id": "46d46aed-9c69-414a-b87c-ea05f66623a0",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {
+    "REPLY TO COMMENT1": [
+      {
+        "json": {
+          "success": true
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [
+          {
+            "node": "Call Reply to Comments For My Posts - Function: Refresh Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if reply was filled in",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if reply was filled in": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "wait a random amount to protect your account": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REPLY TO COMMENT1": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)1": {
+      "main": [
+        [
+          {
+            "node": "REPLY TO COMMENT1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row(s)1": {
+      "main": [
+        [
+          {
+            "node": "wait a random amount to protect your account",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d4c33656-1376-4516-8eda-5dcec106f7d3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a8857fe3bb042a7e3e59271e27b02da0b59a8affaaa1bbc373002233658b61cf"
+  },
+  "id": "2BlZMyJHIb6qIHNo",
+  "tags": []
+}

@@ -1,0 +1,10 @@
+# Development overlay for Enterprise edition with hot reload
+name: linkedin-gateway-enterprise-dev
+
+services:
+  backend:
+    container_name: linkedin-gateway-enterprise-dev-api
+    volumes:
+      - ../backend:/app:ro
+    environment:
+      RELOAD: "true"

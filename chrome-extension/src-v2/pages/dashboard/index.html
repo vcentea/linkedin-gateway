@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Gateway - Dashboard</title>
+    <link rel="icon" href="/favicon.ico" />
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            color: #2c3e50;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        header {
+            background-color: #0077b5;
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background-color: #ddd;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-name {
+            margin-right: 15px;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            border: 1px solid white;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background-color: white;
+            color: #0077b5;
+            transform: translateY(-1px);
+        }
+
+        .dashboard {
+            margin-top: 32px;
+            display: grid;
+            width: 100%;
+            gap: 24px;
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        @media (min-width: 768px) {
+            .dashboard {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .dashboard {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06);
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0,0,0,0.04);
+            width: 100%;
+            min-width: 0;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.08);
+        }
+
+        .card-wide {
+            grid-column: 1 / -1;
+            width: 100%;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #0077b5;
+            letter-spacing: -0.02em;
+        }
+
+        .card-content {
+            color: #5a6c7d;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .card-content p {
+            margin: 12px 0;
+        }
+
+        .card-content strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 18px;
+            color: #5a6c7d;
+            font-weight: 500;
+        }
+
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 18px 24px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: 500;
+            border: 1px solid rgba(198, 40, 40, 0.1);
+        }
+        
+        .linkedin-btn {
+            display: none; 
+            margin-top: 12px; 
+            background-color: #0077b5; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 8px; 
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .linkedin-btn:hover {
+            background-color: #006097;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,119,181,0.2);
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #7f8c9a;
+            line-height: 1.5;
+            margin: 8px 0;
+        }
+
+        .doc-link {
+            color: #0077b5;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .doc-link:hover {
+            color: #006097;
+            text-decoration: underline;
+        }
+
+        .status-connected {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .status-disconnected {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .status-checking {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .status-enabled {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .status-disabled {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        #api-key-container,
+        .api-keys-section,
+        .api-keys-list {
+            width: 100%;
+        }
+
+        .api-keys-header {
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .api-keys-header > div:last-child {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .api-key-card {
+            width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo-container">
+                <img src="../assets/icons/icon128.png" alt="LinkedIn Gateway Logo" class="logo">
+                <h1>LinkedIn Gateway</h1>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">
+                    <img id="userAvatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3Ccircle cx='20' cy='14' r='6' fill='%23999'/%3E%3Cpath d='M 8 32 Q 8 24 20 24 Q 32 24 32 32 Z' fill='%23999'/%3E%3C/svg%3E" alt="User Avatar">
+                </div>
+                <span id="userName" class="user-name">Loading...</span>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="loadingIndicator" class="loading">
+            Loading your dashboard...
+        </div>
+        
+        <div id="errorMessage" class="error-message" style="display: none;">
+            An error occurred while loading your data. Please try again later.
+        </div>
+        
+        <div id="dashboard" class="dashboard" style="display: none;">
+            <!-- Dashboard content will be added here dynamically -->
+            <div id="linkedin-status-container" class="card">
+                <div class="card-title">Account Summary & Services Availability</div>
+                <div class="card-content">
+                    <div id="account-summary-content" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e8ecf1;">
+                        <p><strong>Email:</strong> <span id="account-email">Loading...</span></p>
+                        <p><strong>Member since:</strong> <span id="account-created">Loading...</span></p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500; color: #2c3e50;">LinkedIn:</span>
+                            <span id="linkedin-status-message">Checking...</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500; color: #2c3e50;">API Server:</span>
+                            <span id="api-availability-status">Checking...</span>
+                        </div>
+                        <div id="backend-version-status" style="display: none; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid #e8ecf1; margin-top: 4px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 18px;">⚠️</span>
+                                <span style="font-weight: 600; color: #f59e0b; font-size: 14px;">Backend Update Required</span>
+                            </div>
+                            <div style="font-size: 12px; color: #78350f; padding-left: 26px;">
+                                <span id="backend-version-text"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="linkedin-connect-btn" class="linkedin-btn">Connect LinkedIn</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Server info section (separate from main dashboard) -->
+        <div id="server-info-section" style="display: none; max-width: 1400px; margin: 32px auto 0; padding: 0 24px;">
+            <div id="server-info-tiles-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px;"></div>
+        </div>
+    </div>
+
+    <script src="/dashboard.bundle.js"></script>
+</body>
+</html> 

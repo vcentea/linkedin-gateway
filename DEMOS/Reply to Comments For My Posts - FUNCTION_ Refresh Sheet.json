@@ -1,0 +1,417 @@
+{
+  "name": "Reply to Comments For My Posts - FUNCTION: Refresh Sheet",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "pFzkT72TrRwXcLYJ",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - comments list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/pFzkT72TrRwXcLYJ"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Post_ID_FKey",
+              "keyValue": "={{ $json.id }}"
+            },
+            {
+              "keyName": "Parent_Comment_ID",
+              "condition": "isEmpty"
+            },
+            {
+              "keyName": "My_Reply_Sent",
+              "condition": "isFalse"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        304,
+        1072
+      ],
+      "id": "efd33686-e709-462f-8a6a-c83dc9e86e11",
+      "name": "get unanswered comments1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1232,
+        1072
+      ],
+      "id": "99830b4a-44ee-442e-8c61-45dd2b2f1f2c",
+      "name": "Wait",
+      "webhookId": "3fc3dc69-51f1-4edf-99d7-70e836e2cf93"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "fnQmhCt38PUGUG8H",
+          "mode": "list",
+          "cachedResultName": "Comments Tracking - posts list",
+          "cachedResultUrl": "/projects/4U6dyqlmaqiTDcyH/datatables/fnQmhCt38PUGUG8H"
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        1056
+      ],
+      "id": "7ca689e7-5159-4ec9-a8a0-60bb160f3d0e",
+      "name": "get all posts from table1",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        16,
+        1056
+      ],
+      "id": "172e6605-5121-45ff-a152-f946b166dd1b",
+      "name": "Loop Over Items5",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "15y1YaY1Z6eZqo2X-HPizaPqD6yd0wcvRFIXG7B0xyvQ",
+          "mode": "list",
+          "cachedResultName": "Reply To Comments - of my Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15y1YaY1Z6eZqo2X-HPizaPqD6yd0wcvRFIXG7B0xyvQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1087902830,
+          "mode": "list",
+          "cachedResultName": "Waiting For Reply",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15y1YaY1Z6eZqo2X-HPizaPqD6yd0wcvRFIXG7B0xyvQ/edit#gid=1087902830"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "CommentID": "={{ $json.Comment_ID }}",
+            "Comment Author": "={{ $json.Commenter_Name }}",
+            "Post Summary": "={{ $('Loop Over Items5').item.json.Post_Summary }}",
+            "Comment": "={{ $json.Comment_Text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "CommentID",
+              "displayName": "CommentID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Post Summary",
+              "displayName": "Post Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Comment Author",
+              "displayName": "Comment Author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Comment",
+              "displayName": "Comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "My Reply",
+              "displayName": "My Reply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1456,
+        1072
+      ],
+      "id": "5a5d6172-f2ff-4912-83bc-850900514a0d",
+      "name": "Append row in sheet1",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6hO4xH1L3ItSQtXQ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "value": "15y1YaY1Z6eZqo2X-HPizaPqD6yd0wcvRFIXG7B0xyvQ",
+          "mode": "list",
+          "cachedResultName": "Reply To Comments - of my Posts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15y1YaY1Z6eZqo2X-HPizaPqD6yd0wcvRFIXG7B0xyvQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1087902830,
+          "mode": "list",
+          "cachedResultName": "Waiting For Reply",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15y1YaY1Z6eZqo2X-HPizaPqD6yd0wcvRFIXG7B0xyvQ/edit#gid=1087902830"
+        },
+        "clear": "specificRows",
+        "startIndex": 2,
+        "rowsToDelete": 1000
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -528,
+        1056
+      ],
+      "id": "310d003c-dde0-42a7-8975-2a720c3560aa",
+      "name": "Clear sheet1",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6hO4xH1L3ItSQtXQ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ $prevNode.name == \"If\"}}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        928,
+        1056
+      ],
+      "id": "bc756c0f-5499-4e2e-ac2f-0c28a94a7f9f",
+      "name": "Loop Over Items4",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "0b20dd57-02da-4e00-abc3-7b132882e32b",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -752,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8a2033c2-0e89-4f5d-89e7-3141fa5b7ce8",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "={{ $json.id }}",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        1072
+      ],
+      "id": "68ec3ca3-f5cc-4e5c-9b3d-2ff951eb14a7",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Loop Over Items4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get all posts from table1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items5": {
+      "main": [
+        [],
+        [
+          {
+            "node": "get unanswered comments1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get unanswered comments1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear sheet1": {
+      "main": [
+        [
+          {
+            "node": "get all posts from table1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Clear sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8d7646f1-5311-4e4a-a8db-4f5795a2aad5",
+  "meta": {
+    "instanceId": "a8857fe3bb042a7e3e59271e27b02da0b59a8affaaa1bbc373002233658b61cf"
+  },
+  "id": "fd1glsGMsW2gKttR",
+  "tags": []
+}

@@ -1,0 +1,82 @@
+name: linkedin-gateway-dev-saas
+
+# Development SaaS Configuration with Hot Reload
+# This combines SaaS edition features with development hot reload
+# 
+# Usage: 
+#   docker compose -f docker-compose.yml -f docker-compose.saas.yml -f docker-compose.dev-saas.yml up
+#
+# Features:
+# - Hot reload enabled (source code mounted as volume)
+# - SaaS edition (LG_BACKEND_EDITION=saas)
+# - Debug logging
+# - Auto-restart on code changes
+
+services:
+  # Override backend for development with hot reload
+  backend:
+    # Use Python image directly instead of building
+    image: python:3.11-slim
+    container_name: linkedin-gateway-dev-saas-api
+    
+    # Development-specific volumes
+    volumes:
+      # Mount source code for hot reload (KEY DIFFERENCE)
+      - ../backend:/app
+      # Logs volume (separate to avoid permission issues)
+      - backend_logs:/app/logs
+      # Exclude Python cache to avoid conflicts
+      - /app/__pycache__
+      - /app/app/__pycache__
+      - /app/app/api/__pycache__
+      - /app/app/core/__pycache__
+      - /app/app/linkedin/__pycache__
+    
+    # Development-specific environment
+    environment:
+      # SaaS Edition (inherited from docker-compose.saas.yml)
+      LG_BACKEND_EDITION: saas
+      
+      # Development flags
+      DEBUG: "true"
+      LOG_LEVEL: "DEBUG"
+      PYTHONUNBUFFERED: "1"
+      
+      # Lenient CORS for development
+      CORS_ORIGINS: "*"
+      
+      # Lenient rate limiting for development
+      DEFAULT_RATE_LIMIT: 1000
+      DEFAULT_RATE_WINDOW: 3600
+    
+    # Override command to enable hot reload
+    command: >
+      bash -c "
+        echo '🚀 Installing dependencies...' &&
+        apt-get update && 
+        apt-get install -y gcc postgresql-client curl openssl &&
+        pip install --no-cache-dir -r requirements/base.txt &&
+        mkdir -p /app/logs &&
+        echo '✅ Dependencies installed' &&
+        echo '🔥 Starting SaaS development server with HOT RELOAD...' &&
+        echo '📝 Edition: SaaS (LG_BACKEND_EDITION=saas)' &&
+        echo '🔄 Hot reload: ENABLED' &&
+        echo '📂 Source: /app (mounted from ../backend)' &&
+        uvicorn main:app --host 0.0.0.0 --port \${PORT:-7778} --reload --log-level debug
+      "
+    
+    # Adjust healthcheck for dev startup time
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:\${PORT:-7778}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s  # Longer startup time for dependency installation
+
+# Override volume names for dev-saas
+volumes:
+  backend_logs:
+    name: linkedin-gateway-dev-saas-backend-logs
+
+# Network name already overridden by docker-compose.saas.yml
+

@@ -1,0 +1,56 @@
+name: linkedin-gateway-enterprise
+
+# Enterprise Edition Docker Compose Configuration
+# This file extends the base docker-compose.yml with Enterprise-specific configuration
+# Usage: docker compose -f docker-compose.yml -f docker-compose.enterprise.yml up -d
+#
+# Enterprise is a self-hosted premium edition with more features than Core.
+# Server-side execution is allowed. License validation will be added in future releases.
+
+services:
+  # Override database container name for Enterprise
+  postgres:
+    container_name: linkedin-gateway-enterprise-db
+  
+  # Override backend service for Enterprise edition
+  backend:
+    container_name: linkedin-gateway-enterprise-api
+    environment:
+      # Edition Configuration (override base)
+      LG_BACKEND_EDITION: enterprise
+      LG_CHANNEL: ${LG_CHANNEL:-default}
+      
+      # Enterprise-specific feature flags (all disabled by default)
+      ENT_FEATURE_ORGANIZATIONS: ${ENT_FEATURE_ORGANIZATIONS:-false}
+      ENT_FEATURE_QUOTAS: ${ENT_FEATURE_QUOTAS:-false}
+      ENT_FEATURE_AUDIT_LOGS: ${ENT_FEATURE_AUDIT_LOGS:-false}
+      
+      # License configuration (not enforced yet)
+      # LICENSE_KEY: ${LICENSE_KEY:-}
+      # LICENSE_VALIDATION_URL: ${LICENSE_VALIDATION_URL:-}
+      
+      # Monitoring (optional)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+
+# Override volume names for Enterprise
+volumes:
+  postgres_data:
+    name: linkedin-gateway-enterprise-postgres-data
+  backend_logs:
+    name: linkedin-gateway-enterprise-backend-logs
+
+# Override network name for Enterprise
+networks:
+  linkedin_gateway_network:
+    name: linkedin-gateway-enterprise-network
+
+# Future additions when features are implemented:
+# - Organizations & Teams: Multi-user management
+# - Usage & Quotas: Resource limits and monitoring
+# - Audit Logs: Security and compliance tracking
+# - License Validation: Enterprise license checks
+# See .env.enterprise.example for all available environment variables
+
+
+
