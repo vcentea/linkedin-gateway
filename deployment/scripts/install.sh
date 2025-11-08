@@ -49,11 +49,22 @@ echo -e "${YELLOW}[0/7] Pulling latest changes...${NC}"
 cd "$PROJECT_ROOT"
 
 if [ -d ".git" ]; then
+    # Backup .env files before git operations (protect user configuration)
+    ENV_BACKUP_CREATED=false
+    if [ -f "deployment/.env" ]; then
+        cp "deployment/.env" "deployment/.env.backup" 2>/dev/null && ENV_BACKUP_CREATED=true
+    fi
+    if [ -f "backend/.env" ]; then
+        cp "backend/.env" "backend/.env.backup" 2>/dev/null && ENV_BACKUP_CREATED=true
+    fi
+    
     # Check for uncommitted changes
     if ! git diff-index --quiet HEAD -- 2>/dev/null; then
         echo -e "  ${YELLOW}⚠ Uncommitted changes detected${NC}"
         echo -e "  ${YELLOW}→ Stashing changes...${NC}"
-        git stash push -m "Auto-stash before install $(date +%Y-%m-%d_%H-%M-%S)"
+        # Use -u flag to include untracked files, but exclude .env files
+        git stash push -m "Auto-stash before install $(date +%Y-%m-%d_%H-%M-%S)" --keep-index 2>/dev/null || \
+        git stash push -m "Auto-stash before install $(date +%Y-%m-%d_%H-%M-%S)" 2>/dev/null || true
         echo -e "  ${GREEN}✓ Changes stashed (recover with: git stash pop)${NC}"
     fi
 
@@ -66,6 +77,17 @@ if [ -d ".git" ]; then
     else
         echo -e "  ${YELLOW}⚠ Git pull failed (this is OK - continuing with current version)${NC}"
         echo -e "  ${YELLOW}  If you cloned from the public repo, this is expected.${NC}"
+    fi
+    
+    # Restore .env files if they were backed up
+    if [ "$ENV_BACKUP_CREATED" = true ]; then
+        if [ -f "deployment/.env.backup" ]; then
+            mv "deployment/.env.backup" "deployment/.env" 2>/dev/null || true
+        fi
+        if [ -f "backend/.env.backup" ]; then
+            mv "backend/.env.backup" "backend/.env" 2>/dev/null || true
+        fi
+        echo -e "  ${GREEN}✓ .env files preserved${NC}"
     fi
 else
     echo -e "  ${YELLOW}Not a git repository, skipping git pull${NC}"

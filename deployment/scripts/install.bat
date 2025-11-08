@@ -48,6 +48,17 @@ echo [0/7] Pulling latest changes...
 cd /d "%PROJECT_ROOT%"
 
 if exist ".git" (
+    REM Backup .env files before git operations (protect user configuration)
+    set "ENV_BACKUP_CREATED=false"
+    if exist "deployment\.env" (
+        copy "deployment\.env" "deployment\.env.backup" >nul 2>&1
+        if not errorlevel 1 set "ENV_BACKUP_CREATED=true"
+    )
+    if exist "backend\.env" (
+        copy "backend\.env" "backend\.env.backup" >nul 2>&1
+        if not errorlevel 1 set "ENV_BACKUP_CREATED=true"
+    )
+    
     REM Check for uncommitted changes
     git diff-index --quiet HEAD 2>nul
     if errorlevel 1 (
@@ -55,7 +66,7 @@ if exist ".git" (
         echo   Stashing changes...
         for /f "tokens=1-3 delims=/ " %%a in ("%date%") do set "DATESTR=%%c%%a%%b"
         for /f "tokens=1-3 delims=:. " %%a in ("%time%") do set "TIMESTR=%%a%%b%%c"
-        git stash push -m "Auto-stash before install !DATESTR!_!TIMESTR!"
+        git stash push -m "Auto-stash before install !DATESTR!_!TIMESTR!" >nul 2>&1
         echo   Done: Changes stashed ^(recover with: git stash pop^)
     )
 
@@ -77,6 +88,17 @@ if exist ".git" (
     if "!GIT_PULL_SUCCESS!"=="0" (
         echo   Warning: Git pull failed (this is OK - continuing with current version)
         echo            If you cloned from the public repo, this is expected.
+    )
+    
+    REM Restore .env files if they were backed up
+    if "%ENV_BACKUP_CREATED%"=="true" (
+        if exist "deployment\.env.backup" (
+            move /y "deployment\.env.backup" "deployment\.env" >nul 2>&1
+        )
+        if exist "backend\.env.backup" (
+            move /y "backend\.env.backup" "backend\.env" >nul 2>&1
+        )
+        echo   Done: .env files preserved
     )
 ) else (
     echo   Not a git repository, skipping git pull

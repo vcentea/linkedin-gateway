@@ -1,6 +1,10 @@
 #!/bin/bash
 # LinkedIn Gateway - Simple Update Script
-# Usage: ./update.sh [core|saas|enterprise]
+# Usage: ./update.sh [core|saas|enterprise] [--no-cache]
+# 
+# Options:
+#   --no-cache    Force rebuild without using cache (slower but ensures clean build)
+#                 Default: Uses cache for faster builds
 
 set -e
 
@@ -11,8 +15,16 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Get edition (default: core)
+# Parse arguments
 EDITION="${1:-core}"
+NO_CACHE=false
+
+# Check for --no-cache flag
+for arg in "$@"; do
+    if [[ "$arg" == "--no-cache" ]]; then
+        NO_CACHE=true
+    fi
+done
 
 # Validate edition
 if [[ "$EDITION" != "core" && "$EDITION" != "saas" && "$EDITION" != "enterprise" ]]; then
@@ -56,11 +68,44 @@ echo ""
 echo -e "${YELLOW}[1/5] Updating code from repository...${NC}"
 cd "$PROJECT_ROOT"
 if [ -d ".git" ]; then
+    # Backup .env files before git operations
+    ENV_BACKUP_CREATED=false
+    if [ -f "deployment/.env" ]; then
+        cp "deployment/.env" "deployment/.env.backup" 2>/dev/null && ENV_BACKUP_CREATED=true
+    fi
+    if [ -f "backend/.env" ]; then
+        cp "backend/.env" "backend/.env.backup" 2>/dev/null && ENV_BACKUP_CREATED=true
+    fi
+    
+    # Fetch latest changes
     git fetch origin main > /dev/null 2>&1
-    git merge --abort > /dev/null 2>&1 || true
-    git reset --hard origin/main > /dev/null 2>&1
-    git clean -fdx > /dev/null 2>&1
-    echo -e "  ${GREEN}✓ Code updated (forced to match remote)${NC}"
+    
+    # Use safer merge approach instead of reset --hard
+    # This preserves local changes and only updates what's changed
+    if git merge --ff-only origin/main > /dev/null 2>&1; then
+        echo -e "  ${GREEN}✓ Code updated (fast-forward)${NC}"
+    elif git merge origin/main --no-edit > /dev/null 2>&1; then
+        echo -e "  ${GREEN}✓ Code updated (merged)${NC}"
+    else
+        echo -e "  ${YELLOW}⚠ Merge conflicts detected - keeping local changes${NC}"
+        echo -e "  ${YELLOW}  Resolve conflicts manually if needed${NC}"
+        git merge --abort > /dev/null 2>&1 || true
+    fi
+    
+    # Restore .env files if they were backed up
+    if [ "$ENV_BACKUP_CREATED" = true ]; then
+        if [ -f "deployment/.env.backup" ]; then
+            mv "deployment/.env.backup" "deployment/.env" 2>/dev/null || true
+        fi
+        if [ -f "backend/.env.backup" ]; then
+            mv "backend/.env.backup" "backend/.env" 2>/dev/null || true
+        fi
+        echo -e "  ${GREEN}✓ .env files preserved${NC}"
+    fi
+    
+    # Clean only build artifacts, not user files
+    # Remove only common build artifacts, preserving .env and other user files
+    git clean -fd -e "*.env" -e "*.env.*" -e ".env.backup" > /dev/null 2>&1 || true
 else
     echo -e "  ${YELLOW}⚠ Not a git repo, skipping${NC}"
 fi
@@ -69,15 +114,41 @@ echo ""
 # [2/5] Docker images
 echo -e "${YELLOW}[2/5] Updating Docker images...${NC}"
 cd "$DEPLOYMENT_DIR"
-$COMPOSE pull > /dev/null 2>&1
-echo -e "  ${GREEN}✓ Images updated${NC}"
+echo -e "  ${BLUE}ℹ Pulling latest base images...${NC}"
+if $COMPOSE pull; then
+    echo -e "  ${GREEN}✓ Images updated${NC}"
+else
+    echo -e "  ${YELLOW}⚠ Some images may not have updated (this is usually OK)${NC}"
+fi
 echo ""
 
 # [3/5] Rebuild containers
 echo -e "${YELLOW}[3/5] Rebuilding containers...${NC}"
-$COMPOSE build --no-cache > /dev/null 2>&1
-$COMPOSE up -d
-echo -e "  ${GREEN}✓ Containers running${NC}"
+cd "$DEPLOYMENT_DIR"
+
+if [ "$NO_CACHE" = true ]; then
+    echo -e "  ${BLUE}ℹ Building without cache (this may take 5-15 minutes)...${NC}"
+    BUILD_ARGS="--no-cache --progress=plain"
+else
+    echo -e "  ${BLUE}ℹ Building with cache (faster, use --no-cache for clean build)...${NC}"
+    BUILD_ARGS="--progress=plain"
+fi
+
+echo -e "  ${BLUE}ℹ Build output:${NC}"
+if $COMPOSE build $BUILD_ARGS; then
+    echo -e "  ${GREEN}✓ Build completed${NC}"
+else
+    echo -e "  ${RED}✗ Build failed! Check output above for errors${NC}"
+    exit 1
+fi
+
+echo -e "  ${BLUE}ℹ Starting containers...${NC}"
+if $COMPOSE up -d; then
+    echo -e "  ${GREEN}✓ Containers running${NC}"
+else
+    echo -e "  ${RED}✗ Failed to start containers${NC}"
+    exit 1
+fi
 echo ""
 
 # [4/5] Wait for database

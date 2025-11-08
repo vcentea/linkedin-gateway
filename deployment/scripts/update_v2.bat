@@ -1,12 +1,17 @@
 @echo off
 REM LinkedIn Gateway - Improved Update Script V2 (Windows)
-REM Usage: update_v2.bat [core|saas|enterprise] [version]
+REM Usage: update_v2.bat [core|saas|enterprise] [version] [--no-cache]
 REM
 REM This version uses safer git operations that preserve history:
 REM - Uses git pull instead of git reset --hard
 REM - Handles merge conflicts gracefully
 REM - Supports version pinning
 REM - Better error handling
+REM - Progress visibility for builds
+REM
+REM Options:
+REM   --no-cache    Force rebuild without using cache (slower but ensures clean build)
+REM                 Default: Uses cache for faster builds
 
 setlocal enabledelayedexpansion
 
@@ -17,6 +22,12 @@ if "%EDITION%"=="" set "EDITION=core"
 REM Get version (default: latest)
 set "VERSION=%~2"
 if "%VERSION%"=="" set "VERSION=latest"
+
+REM Check for --no-cache flag
+set "NO_CACHE=false"
+if "%2"=="--no-cache" set "NO_CACHE=true"
+if "%3"=="--no-cache" set "NO_CACHE=true"
+if "%4"=="--no-cache" set "NO_CACHE=true"
 
 REM Validate edition
 if not "%EDITION%"=="core" if not "%EDITION%"=="saas" if not "%EDITION%"=="enterprise" (
@@ -163,14 +174,41 @@ echo.
 REM [2/6] Docker images
 echo [2/6] Updating Docker images...
 cd /d "%DEPLOYMENT_DIR%"
-%COMPOSE% pull >nul 2>&1
-echo   Done: Images updated
+echo   Info: Pulling latest base images...
+%COMPOSE% pull
+if errorlevel 1 (
+    echo   Warning: Some images may not have updated (this is usually OK)
+) else (
+    echo   Done: Images updated
+)
 echo.
 
 REM [3/6] Rebuild containers
 echo [3/6] Rebuilding containers...
-%COMPOSE% build --no-cache >nul 2>&1
+cd /d "%DEPLOYMENT_DIR%"
+
+if "%NO_CACHE%"=="true" (
+    echo   Info: Building without cache (this may take 5-15 minutes)...
+    set "BUILD_ARGS=--no-cache --progress=plain"
+) else (
+    echo   Info: Building with cache (faster, use --no-cache for clean build)...
+    set "BUILD_ARGS=--progress=plain"
+)
+
+echo   Info: Build output:
+%COMPOSE% build %BUILD_ARGS%
+if errorlevel 1 (
+    echo   Error: Build failed! Check output above for errors
+    exit /b 1
+)
+echo   Done: Build completed
+
+echo   Info: Starting containers...
 %COMPOSE% up -d
+if errorlevel 1 (
+    echo   Error: Failed to start containers
+    exit /b 1
+)
 echo   Done: Containers running
 echo.
 

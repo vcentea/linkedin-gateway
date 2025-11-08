@@ -1,12 +1,17 @@
 #!/bin/bash
 # LinkedIn Gateway - Improved Update Script V2
-# Usage: ./update_v2.sh [core|saas|enterprise] [version]
+# Usage: ./update_v2.sh [core|saas|enterprise] [version] [--no-cache]
 #
 # This version uses safer git operations that preserve history:
 # - Uses git pull instead of git reset --hard
 # - Handles merge conflicts gracefully
 # - Supports version pinning
 # - Better error handling
+# - Progress visibility for builds
+#
+# Options:
+#   --no-cache    Force rebuild without using cache (slower but ensures clean build)
+#                 Default: Uses cache for faster builds
 
 set -e
 
@@ -20,6 +25,14 @@ NC='\033[0m'
 # Get edition (default: core)
 EDITION="${1:-core}"
 VERSION="${2:-latest}"
+NO_CACHE=false
+
+# Check for --no-cache flag
+for arg in "$@"; do
+    if [[ "$arg" == "--no-cache" ]]; then
+        NO_CACHE=true
+    fi
+done
 
 # Validate edition
 if [[ "$EDITION" != "core" && "$EDITION" != "saas" && "$EDITION" != "enterprise" ]]; then
@@ -150,15 +163,41 @@ echo ""
 # [2/6] Docker images
 echo -e "${YELLOW}[2/6] Updating Docker images...${NC}"
 cd "$DEPLOYMENT_DIR"
-$COMPOSE pull > /dev/null 2>&1
-echo -e "  ${GREEN}✓ Images updated${NC}"
+echo -e "  ${BLUE}ℹ Pulling latest base images...${NC}"
+if $COMPOSE pull; then
+    echo -e "  ${GREEN}✓ Images updated${NC}"
+else
+    echo -e "  ${YELLOW}⚠ Some images may not have updated (this is usually OK)${NC}"
+fi
 echo ""
 
 # [3/6] Rebuild containers
 echo -e "${YELLOW}[3/6] Rebuilding containers...${NC}"
-$COMPOSE build --no-cache > /dev/null 2>&1
-$COMPOSE up -d
-echo -e "  ${GREEN}✓ Containers running${NC}"
+cd "$DEPLOYMENT_DIR"
+
+if [ "$NO_CACHE" = true ]; then
+    echo -e "  ${BLUE}ℹ Building without cache (this may take 5-15 minutes)...${NC}"
+    BUILD_ARGS="--no-cache --progress=plain"
+else
+    echo -e "  ${BLUE}ℹ Building with cache (faster, use --no-cache for clean build)...${NC}"
+    BUILD_ARGS="--progress=plain"
+fi
+
+echo -e "  ${BLUE}ℹ Build output:${NC}"
+if $COMPOSE build $BUILD_ARGS; then
+    echo -e "  ${GREEN}✓ Build completed${NC}"
+else
+    echo -e "  ${RED}✗ Build failed! Check output above for errors${NC}"
+    exit 1
+fi
+
+echo -e "  ${BLUE}ℹ Starting containers...${NC}"
+if $COMPOSE up -d; then
+    echo -e "  ${GREEN}✓ Containers running${NC}"
+else
+    echo -e "  ${RED}✗ Failed to start containers${NC}"
+    exit 1
+fi
 echo ""
 
 # [4/6] Wait for database
