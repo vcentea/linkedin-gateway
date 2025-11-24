@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn Gateway",
+  "short_name": "LinkedIn Gateway",
+  "version": "1.0.0",
+  "description": "A Chrome extension for connecting your LinkedIn profile with matching opportunities",
+  "icons": {
+    "16": "./assets/icons/icon16.png",
+    "48": "./assets/icons/icon48.png",
+    "128": "./assets/icons/icon128.png"
+  },
+  "action": {
+    "default_title": "LinkedIn Gateway"
+  },
+  "background": {
+    "service_worker": "background.bundle.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.linkedin.com/*"],
+      "js": ["content.bundle.js"]
+    }
+  ],
+  "permissions": [
+    "storage",
+    "cookies",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://lgdev.ainnovate.tech/*",
+    "https://www.linkedin.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "web_accessible_resources": [{
+    "resources": ["assets/*", "shared/*"],
+    "matches": ["<all_urls>"]
+  }]
+} 

@@ -1,0 +1,127 @@
+name: linkedin-gateway-dev
+
+# Development Configuration with Hot Reload
+# This file is for LOCAL DEVELOPMENT ONLY - DO NOT USE IN PRODUCTION
+# 
+# Usage: docker compose -f docker-compose.dev.yml up
+#
+# Features:
+# - Code mounted as volume for hot reload
+# - Auto-reload enabled
+# - Detailed logging
+# - Exposed PostgreSQL port for database tools
+
+services:
+  # PostgreSQL Database (same as production)
+  postgres:
+    image: postgres:17-alpine
+    container_name: linkedin-gateway-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-linkedin_gateway_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-devpassword}
+      POSTGRES_DB: ${DB_NAME:-LinkedinGateway}
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-linkedin_gateway_user} -d ${DB_NAME:-LinkedinGateway}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - linkedin_gateway_network
+
+  # Backend API with Hot Reload
+  backend:
+    image: python:3.11-slim
+    container_name: linkedin-gateway-dev-api
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-linkedin_gateway_user}
+      DB_PASSWORD: ${DB_PASSWORD:-devpassword}
+      DB_NAME: ${DB_NAME:-LinkedinGateway}
+      
+      # API
+      PORT: ${PORT:-7778}
+      BACKEND_PORT: ${BACKEND_PORT:-7778}
+      API_HOST: 0.0.0.0
+      
+      # Security (use weak keys for dev)
+      SECRET_KEY: ${SECRET_KEY:-dev_secret_key_not_for_production}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev_jwt_secret_key_not_for_production}
+      
+      # Edition Configuration
+      LG_BACKEND_EDITION: ${LG_BACKEND_EDITION:-core}
+      LG_CHANNEL: ${LG_CHANNEL:-default}
+      
+      # LinkedIn OAuth
+      LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID}
+      LINKEDIN_CLIENT_SECRET: ${LINKEDIN_CLIENT_SECRET}
+      
+      # Public URL (for OAuth callbacks)
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:7778}
+      BEHIND_PROXY: ${BEHIND_PROXY:-false}
+      TUNNEL_SERVICE: ${TUNNEL_SERVICE}
+      
+      # CORS (allow all in dev)
+      CORS_ORIGINS: "*"
+      
+      # Rate Limiting (lenient in dev)
+      DEFAULT_RATE_LIMIT: ${DEFAULT_RATE_LIMIT:-1000}
+      DEFAULT_RATE_WINDOW: ${DEFAULT_RATE_WINDOW:-3600}
+      
+      # Development
+      DEBUG: "true"
+      LOG_LEVEL: "DEBUG"
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "${PORT:-7778}:${PORT:-7778}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - linkedin_gateway_network
+    volumes:
+      # Mount source code for hot reload (THIS IS THE KEY DIFFERENCE)
+      - ../backend:/app
+      # Mount logs separately to avoid permission issues
+      - backend_logs_dev:/app/logs
+      # Keep __pycache__ in container to avoid conflicts
+      - /app/__pycache__
+      - /app/app/__pycache__
+    command: >
+      bash -c "
+        apt-get update && 
+        apt-get install -y gcc postgresql-client curl openssl &&
+        pip install --no-cache-dir -r requirements/base.txt &&
+        mkdir -p /app/logs &&
+        echo 'Starting development server with hot reload...' &&
+        uvicorn main:app --host 0.0.0.0 --port ${PORT:-7778} --reload --log-level debug
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-7778}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  postgres_data_dev:
+    name: linkedin-gateway-dev-postgres-data
+    driver: local
+  backend_logs_dev:
+    name: linkedin-gateway-dev-backend-logs
+    driver: local
+
+networks:
+  linkedin_gateway_network:
+    name: linkedin-gateway-dev-network
+    driver: bridge
+

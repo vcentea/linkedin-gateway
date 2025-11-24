@@ -1,0 +1,102 @@
+name: linkedin-gateway-core
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17-alpine
+    container_name: linkedin-gateway-core-db
+    restart: unless-stopped
+    env_file:
+      - ${ENV_FILE:-.env}
+    environment:
+      POSTGRES_USER: ${DB_USER:-linkedin_gateway_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_this_password}
+      POSTGRES_DB: ${DB_NAME:-LinkedinGateway}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "${DB_PORT:-5437}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-linkedin_gateway_user} -d ${DB_NAME:-LinkedinGateway}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - linkedin_gateway_network
+
+  # Backend API
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../deployment/Dockerfile
+    container_name: linkedin-gateway-core-api
+    restart: unless-stopped
+    env_file:
+      - ${ENV_FILE:-.env}
+    environment:
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-linkedin_gateway_user}
+      DB_PASSWORD: ${DB_PASSWORD:-change_this_password}
+      DB_NAME: ${DB_NAME:-LinkedinGateway}
+      
+      # API
+      PORT: ${PORT:-7778}
+      BACKEND_PORT: ${BACKEND_PORT:-7778}
+      API_HOST: 0.0.0.0
+      
+      # Security
+      SECRET_KEY: ${SECRET_KEY:-change_this_secret_key}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change_this_secret_key}
+      
+      # Edition Configuration
+      LG_BACKEND_EDITION: ${LG_BACKEND_EDITION:-core}
+      LG_CHANNEL: ${LG_CHANNEL:-default}
+      
+      # LinkedIn OAuth
+      LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID}
+      LINKEDIN_CLIENT_SECRET: ${LINKEDIN_CLIENT_SECRET}
+      
+      # Public URL (for OAuth callbacks)
+      PUBLIC_URL: ${PUBLIC_URL}
+      BEHIND_PROXY: ${BEHIND_PROXY:-false}
+      TUNNEL_SERVICE: ${TUNNEL_SERVICE}
+      
+      # CORS
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      
+      # Rate Limiting
+      DEFAULT_RATE_LIMIT: ${DEFAULT_RATE_LIMIT:-100}
+      DEFAULT_RATE_WINDOW: ${DEFAULT_RATE_WINDOW:-3600}
+    ports:
+      - "${PORT:-7778}:${PORT:-7778}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:$${PORT:-7778}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - linkedin_gateway_network
+    volumes:
+      - backend_logs:/app/logs
+      - ./.env:/app/.env:ro
+
+volumes:
+  postgres_data:
+    name: linkedin-gateway-core-postgres-data
+    driver: local
+  backend_logs:
+    name: linkedin-gateway-core-backend-logs
+    driver: local
+
+networks:
+  linkedin_gateway_network:
+    name: linkedin-gateway-core-network
+    driver: bridge
+

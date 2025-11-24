@@ -1,0 +1,93 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+packages:
+  - docker.io
+  - ufw
+  - ca-certificates
+
+write_files:
+  # Force-install & pin the LinkedIn Gateway Chrome extension inside the container
+  - path: /opt/kasm/policies/extensions.json
+    permissions: "0644"
+    content: |
+      {
+        "ExtensionInstallForcelist": [
+          "dhfnemkiicglblkihhlaghjjpfbfeaeo;https://clients2.google.com/service/update2/crx"
+        ],
+        "ExtensionSettings": {
+          "dhfnemkiicglblkihhlaghjjpfbfeaeo": {
+            "installation_mode": "force_installed",
+            "toolbar_pin": "force_pinned",
+            "update_url": "https://clients2.google.com/service/update2/crx"
+          }
+        }
+      }
+
+  # Systemd unit using plain `docker run` (no compose). Binds Kasm to 127.0.0.1:6901 (HTTPS).
+  - path: /etc/systemd/system/kasm-chrome.service
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=Kasm Chrome container (docker run)
+      After=network-online.target docker.service
+      Wants=network-online.target
+      Requires=docker.service
+
+      [Service]
+      Type=simple
+      Restart=always
+      RestartSec=5
+      TimeoutStartSec=300
+
+      # Ensure persistent profile dir exists & is owned by container user (uid:gid 1000:1000)
+      ExecStartPre=/usr/bin/install -d -o 1000 -g 1000 -m 0775 /opt/kasm/data
+      ExecStartPre=/usr/bin/chown -R 1000:1000 /opt/kasm/data
+
+      # Start clean, pull image, then run
+      ExecStartPre=-/usr/bin/docker rm -f kasm-chrome
+      ExecStartPre=/usr/bin/docker pull kasmweb/chrome:1.17.0
+
+      ExecStart=/usr/bin/docker run \
+        --name kasm-chrome \
+        --shm-size=1g \
+        -e VNC_PW=Rc2025!! \
+        -e LAUNCH_URL=https://www.linkedin.com/login \
+        -v /opt/kasm/data:/home/kasm-user \
+        -v /opt/kasm/policies:/etc/opt/chrome/policies/managed:ro \
+        -p 127.0.0.1:6901:6901 \
+        --restart=unless-stopped \
+        kasmweb/chrome:1.17.0
+
+      ExecStop=/usr/bin/docker stop -t 10 kasm-chrome
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  # Create dirs now (policy + persistent profile) and set ownership
+  - mkdir -p /opt/kasm/data /opt/kasm/policies
+  - chown -R 1000:1000 /opt/kasm/data
+
+  # Enable Docker and the Kasm service
+  - systemctl enable --now docker
+  - systemctl daemon-reload
+  - systemctl enable --now kasm-chrome
+
+  # Optional SSH user for tunneling from your laptop
+  - useradd -m -s /bin/bash -G sudo,docker chrome
+  - bash -lc 'echo "chrome:ChromeUser#2025" | chpasswd'
+
+  # Firewall: only SSH open; Kasm stays bound to 127.0.0.1
+  - ufw allow OpenSSH
+  - bash -lc 'yes | ufw enable'
+
+final_message: |
+  === Remote Chrome (Docker/Kasm) ready ===
+  1) From your machine (keep the window open):
+     ssh -N -T -L 6901:127.0.0.1:6901 chrome@<SERVER_IP>   (password: ChromeUser#2025)
+  2) Open (note HTTPS):
+     https://localhost:6901
+     Username: kasm_user
+     Password: Rc2025!!
+  Chrome starts on LinkedIn; LinkedIn Gateway is forced & pinned; profile persists in /opt/kasm/data.
