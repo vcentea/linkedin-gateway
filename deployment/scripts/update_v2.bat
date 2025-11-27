@@ -1,17 +1,18 @@
 @echo off
 REM LinkedIn Gateway - Improved Update Script V2 (Windows)
-REM Usage: update_v2.bat [core|saas|enterprise] [version] [--no-cache]
+REM Usage: update_v2.bat [core|saas|enterprise] [version] [--no-cache] [--force-git]
 REM
 REM This version uses safer git operations that preserve history:
 REM - Uses git pull instead of git reset --hard
-REM - Handles merge conflicts gracefully
+REM - Handles merge conflicts gracefully (with auto-recovery option)
 REM - Supports version pinning
 REM - Better error handling
 REM - Progress visibility for builds
 REM
 REM Options:
 REM   --no-cache    Force rebuild without using cache (slower but ensures clean build)
-REM                 Default: Uses cache for faster builds
+REM   --force-git   Auto-force git reset on merge conflicts (safe for deployments)
+REM                 Your .env and database are never touched by git operations
 
 setlocal enabledelayedexpansion
 
@@ -23,11 +24,15 @@ REM Get version (default: latest)
 set "VERSION=%~2"
 if "%VERSION%"=="" set "VERSION=latest"
 
-REM Check for --no-cache flag
+REM Check for flags
 set "NO_CACHE=false"
+set "FORCE_GIT=false"
 if "%2"=="--no-cache" set "NO_CACHE=true"
 if "%3"=="--no-cache" set "NO_CACHE=true"
 if "%4"=="--no-cache" set "NO_CACHE=true"
+if "%2"=="--force-git" set "FORCE_GIT=true"
+if "%3"=="--force-git" set "FORCE_GIT=true"
+if "%4"=="--force-git" set "FORCE_GIT=true"
 
 REM Validate edition
 if not "%EDITION%"=="core" if not "%EDITION%"=="saas" if not "%EDITION%"=="enterprise" (
@@ -143,21 +148,45 @@ if exist ".git" (
             echo   Done: Code updated successfully ^(merge^)
         ) else (
             REM Merge failed - likely conflicts
-            echo   Error: Merge failed - conflicts detected
-            echo.
-            echo   Conflicting files:
-            git diff --name-only --diff-filter=U
-            echo.
-            echo =======================================
-            echo MERGE CONFLICT - ACTION REQUIRED
-            echo =======================================
-            echo Options:
-            echo   1. Resolve conflicts manually and run: git merge --continue
-            echo   2. Abort merge and keep current version: git merge --abort
-            echo   3. Force update ^(DESTRUCTIVE^): git reset --hard %TARGET%
-            echo.
-            echo To see conflicts: git diff
-            exit /b 1
+            echo   Warning: Merge conflicts detected
+            
+            REM Abort the failed merge first
+            git merge --abort >nul 2>&1
+            
+            REM Check if --force-git flag was provided
+            if "%FORCE_GIT%"=="true" (
+                echo   Warning: --force-git specified, forcing update...
+                git reset --hard %TARGET%
+                echo   Done: Code force-updated to %TARGET%
+            ) else (
+                echo.
+                echo =======================================
+                echo MERGE CONFLICT DETECTED
+                echo =======================================
+                echo.
+                echo Safe to force update because:
+                echo   - .env file is gitignored ^(your settings are safe^)
+                echo   - Database is separate ^(your data is safe^)
+                echo   - Local changes were stashed ^(can restore later^)
+                echo.
+                echo Force reset to latest version? ^(recommended for deployment servers^)
+                set /p "FORCE_CONFIRM=Type 'yes' to force update, or 'no' to abort: "
+                
+                if "!FORCE_CONFIRM!"=="yes" (
+                    echo   Info: Force updating to %TARGET%...
+                    git reset --hard %TARGET%
+                    echo   Done: Code force-updated successfully
+                    echo   Info: Your stashed changes are still available: git stash list
+                ) else (
+                    echo Update aborted by user
+                    echo.
+                    echo To update later, you can:
+                    echo   1. Run with --force-git flag: update_v2.bat core --force-git
+                    echo   2. Manually force: git reset --hard origin/main
+                    echo   3. Restore stash first: git stash pop
+                    exit /b 1
+                )
+            )
         )
     )
 

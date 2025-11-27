@@ -4,24 +4,31 @@
  * Constants for Gemini AI integration
  * 
  * @fileoverview Defines OAuth configuration and constants for Google/Gemini authentication.
- * Gemini OAuth is optional - credentials should be configured via server settings if needed.
+ * Uses the SAME OAuth credentials as the official Gemini CLI - this ensures users get their OWN
+ * project and quota, not tied to our extension's project.
  * 
- * @see https://github.com/gzzhongqi/geminicli2api for public OAuth client credentials
+ * IMPORTANT: These credentials are INTENTIONALLY PUBLIC
+ * Desktop OAuth apps require embedded client credentials (this is Google's design).
+ * The Gemini CLI itself uses these same credentials publicly.
+ * 
+ * @see https://github.com/gzzhongqi/geminicli2api - Source of these public credentials
  */
 
 /**
- * Google OAuth 2.0 Client ID - loaded from server config
- * Leave empty - Gemini OAuth is handled server-side
+ * Google OAuth 2.0 Client ID from Gemini CLI
+ * This is a PUBLIC client that ensures tokens are tied to USER's project
+ * gitleaks:allow - Intentionally public OAuth credential from Gemini CLI
  * @type {string}
  */
-export const GEMINI_CLIENT_ID = '';
+export const GEMINI_CLIENT_ID = '681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com';
 
 /**
- * Google OAuth 2.0 Client Secret - loaded from server config
- * Leave empty - Gemini OAuth is handled server-side
+ * Google OAuth 2.0 Client Secret from Gemini CLI  
+ * This is a PUBLIC secret (desktop apps require it for token exchange)
+ * gitleaks:allow - Intentionally public OAuth credential from Gemini CLI
  * @type {string}
  */
-export const GEMINI_CLIENT_SECRET = '';
+export const GEMINI_CLIENT_SECRET = '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';
 
 /**
  * OAuth scopes required for Gemini API access

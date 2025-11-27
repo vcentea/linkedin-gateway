@@ -21,11 +21,20 @@ SHARED_PROJECT_ID = os.environ.get("GEMINI_SHARED_PROJECT_ID", "linkedin-gateway
 # Client Configuration - Public Gemini CLI credentials
 CLI_VERSION = "0.20.0"  # Match current gemini-cli version
 
-# OAuth Configuration - Set via environment variables if needed
-# These are optional - only required if using Gemini OAuth flow
-# You can use credentials from: https://github.com/gzzhongqi/geminicli2api
-GEMINI_CLIENT_ID = os.environ.get("GEMINI_CLIENT_ID", "")
-GEMINI_CLIENT_SECRET = os.environ.get("GEMINI_CLIENT_SECRET", "")
+# OAuth Configuration - PUBLIC credentials from Gemini CLI
+# These are INTENTIONALLY PUBLIC - from https://github.com/gzzhongqi/geminicli2api
+# Desktop OAuth apps require embedded credentials (Google's design)
+# Users authenticate with their OWN Google account using these app credentials
+# This ensures users get their own quota, not tied to our project
+# nosec: B105 - These are intentionally public OAuth client credentials
+GEMINI_CLIENT_ID = os.environ.get(
+    "GEMINI_CLIENT_ID",
+    "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"  # gitleaks:allow
+)
+GEMINI_CLIENT_SECRET = os.environ.get(
+    "GEMINI_CLIENT_SECRET",
+    "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"  # gitleaks:allow - Public Gemini CLI credential
+)
 
 # OAuth Scopes required for Gemini API access
 GEMINI_SCOPES = [

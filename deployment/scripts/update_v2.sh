@@ -1,17 +1,18 @@
 #!/bin/bash
 # LinkedIn Gateway - Improved Update Script V2
-# Usage: ./update_v2.sh [core|saas|enterprise] [version] [--no-cache]
+# Usage: ./update_v2.sh [core|saas|enterprise] [version] [--no-cache] [--force-git]
 #
 # This version uses safer git operations that preserve history:
 # - Uses git pull instead of git reset --hard
-# - Handles merge conflicts gracefully
+# - Handles merge conflicts gracefully (with auto-recovery option)
 # - Supports version pinning
 # - Better error handling
 # - Progress visibility for builds
 #
 # Options:
 #   --no-cache    Force rebuild without using cache (slower but ensures clean build)
-#                 Default: Uses cache for faster builds
+#   --force-git   Auto-force git reset on merge conflicts (safe for deployments)
+#                 Your .env and database are never touched by git operations
 
 set -e
 
@@ -27,10 +28,14 @@ EDITION="${1:-core}"
 VERSION="${2:-latest}"
 NO_CACHE=false
 
-# Check for --no-cache flag
+# Check for flags
+FORCE_GIT=false
 for arg in "$@"; do
     if [[ "$arg" == "--no-cache" ]]; then
         NO_CACHE=true
+    fi
+    if [[ "$arg" == "--force-git" ]]; then
+        FORCE_GIT=true
     fi
 done
 
@@ -156,21 +161,47 @@ if [ -d ".git" ]; then
             echo -e "  ${GREEN}✓ Code updated successfully (merge)${NC}"
         else
             # Merge failed - likely conflicts
-            echo -e "${RED}✗ Merge failed - conflicts detected${NC}"
-            echo -e "${YELLOW}Conflicting files:${NC}"
-            git diff --name-only --diff-filter=U
-
-            echo ""
-            echo -e "${RED}═══════════════════════════════════════${NC}"
-            echo -e "${RED}MERGE CONFLICT - ACTION REQUIRED${NC}"
-            echo -e "${RED}═══════════════════════════════════════${NC}"
-            echo -e "${YELLOW}Options:${NC}"
-            echo -e "  1. Resolve conflicts manually and run: git merge --continue"
-            echo -e "  2. Abort merge and keep current version: git merge --abort"
-            echo -e "  3. Force update (DESTRUCTIVE): git reset --hard $TARGET"
-            echo -e ""
-            echo -e "${YELLOW}To see conflicts: git diff${NC}"
-            exit 1
+            echo -e "${YELLOW}⚠ Merge conflicts detected${NC}"
+            
+            # Abort the failed merge first
+            git merge --abort 2>/dev/null || true
+            
+            # Check if --force-git flag was provided or auto-force for deployment
+            if [ "$FORCE_GIT" = true ]; then
+                echo -e "  ${YELLOW}⚠ --force-git specified, forcing update...${NC}"
+                git reset --hard "$TARGET"
+                echo -e "  ${GREEN}✓ Code force-updated to $TARGET${NC}"
+            else
+                # For deployment servers, it's usually safe to force
+                # .env is gitignored, database is separate
+                echo ""
+                echo -e "${YELLOW}═══════════════════════════════════════${NC}"
+                echo -e "${YELLOW}MERGE CONFLICT DETECTED${NC}"
+                echo -e "${YELLOW}═══════════════════════════════════════${NC}"
+                echo ""
+                echo -e "${GREEN}Safe to force update because:${NC}"
+                echo -e "  ✓ .env file is gitignored (your settings are safe)"
+                echo -e "  ✓ Database is separate (your data is safe)"
+                echo -e "  ✓ Local changes were stashed (can restore later)"
+                echo ""
+                echo -e "${YELLOW}Force reset to latest version? (recommended for deployment servers)${NC}"
+                read -p "Type 'yes' to force update, or 'no' to abort: " FORCE_CONFIRM
+                
+                if [ "$FORCE_CONFIRM" = "yes" ]; then
+                    echo -e "  ${BLUE}ℹ Force updating to $TARGET...${NC}"
+                    git reset --hard "$TARGET"
+                    echo -e "  ${GREEN}✓ Code force-updated successfully${NC}"
+                    echo -e "  ${BLUE}ℹ Your stashed changes are still available: git stash list${NC}"
+                else
+                    echo -e "${YELLOW}Update aborted by user${NC}"
+                    echo ""
+                    echo -e "To update later, you can:"
+                    echo -e "  1. Run with --force-git flag: ./update_v2.sh core --force-git"
+                    echo -e "  2. Manually force: git reset --hard origin/main"
+                    echo -e "  3. Restore stash first: git stash pop"
+                    exit 1
+                fi
+            fi
         fi
     fi
 
