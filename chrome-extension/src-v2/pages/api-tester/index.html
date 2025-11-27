@@ -336,9 +336,10 @@
                     <div style="background: #f0f7ff; border-left: 3px solid #0066cc; padding: 0.75rem; margin-bottom: 0.5rem; font-size: 0.9rem;">
                         <strong>📌 How to use your API Key:</strong>
                         <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
-                            <li><strong>Header:</strong> <code style="background: #e8f4f8; padding: 0.2rem 0.4rem; border-radius: 3px;">X-API-Key: your_api_key_here</code></li>
+                            <li><strong>LinkedIn endpoints:</strong> <code style="background: #e8f4f8; padding: 0.2rem 0.4rem; border-radius: 3px;">X-API-Key: your_key</code></li>
+                            <li><strong>Gemini endpoints:</strong> <code style="background: #fff3e0; padding: 0.2rem 0.4rem; border-radius: 3px;">x-goog-api-key: your_key</code></li>
                         </ul>
-                        <p style="margin: 0.5rem 0 0 0; color: #666;">The tester automatically adds your key to both header and body.</p>
+                        <p style="margin: 0.5rem 0 0 0; color: #666;">The tester automatically uses the correct header based on endpoint type.</p>
                     </div>
                     <input type="text" id="api-key-input" placeholder="Enter your API key" required>
                 </div>

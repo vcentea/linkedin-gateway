@@ -1,5 +1,123 @@
 [
   {
+    "name": "[Gemini] List Models (v1beta)",
+    "endpoint": "/api/v1/gemini/v1beta/models",
+    "method": "GET",
+    "serverOnly": true,
+    "geminiAuth": true,
+    "params": [],
+    "expectedResponse": "{\"models\": [{\"name\": \"gemini-2.5-flash\", \"displayName\": \"Gemini 2.5 Flash\", ...}]}"
+  },
+  {
+    "name": "[Gemini] Generate Content (v1beta)",
+    "endpoint": "/api/v1/gemini/v1beta/models/{model_path}:generateContent",
+    "method": "POST",
+    "serverOnly": true,
+    "geminiAuth": true,
+    "rawBody": true,
+    "rawBodyExample": "{\n  \"contents\": [\n    {\n      \"role\": \"user\",\n      \"parts\": [{\"text\": \"Hello, how are you?\"}]\n    }\n  ],\n  \"generationConfig\": {\n    \"temperature\": 0.7,\n    \"topP\": 0.95,\n    \"topK\": 40,\n    \"maxOutputTokens\": 1024,\n    \"stopSequences\": []\n  },\n  \"systemInstruction\": {\n    \"parts\": [{\"text\": \"You are a helpful assistant.\"}]\n  },\n  \"safetySettings\": [\n    {\"category\": \"HARM_CATEGORY_HARASSMENT\", \"threshold\": \"BLOCK_NONE\"},\n    {\"category\": \"HARM_CATEGORY_HATE_SPEECH\", \"threshold\": \"BLOCK_NONE\"},\n    {\"category\": \"HARM_CATEGORY_SEXUALLY_EXPLICIT\", \"threshold\": \"BLOCK_NONE\"},\n    {\"category\": \"HARM_CATEGORY_DANGEROUS_CONTENT\", \"threshold\": \"BLOCK_NONE\"}\n  ]\n}",
+    "description": "Native Google Gemini API format. Body is passed directly to Google API.",
+    "params": [
+      {
+        "name": "model_path",
+        "type": "text",
+        "required": true,
+        "default": "gemini-2.5-flash",
+        "description": "Model ID (gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-pro, gemini-1.5-flash)"
+      }
+    ],
+    "expectedResponse": "{\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"...\"}], \"role\": \"model\"}, \"finishReason\": \"STOP\"}], \"usageMetadata\": {...}}"
+  },
+  {
+    "name": "[Gemini] Stream Generate Content (v1beta)",
+    "endpoint": "/api/v1/gemini/v1beta/models/{model_path}:streamGenerateContent",
+    "method": "POST",
+    "serverOnly": true,
+    "geminiAuth": true,
+    "rawBody": true,
+    "rawBodyExample": "{\n  \"contents\": [\n    {\n      \"role\": \"user\",\n      \"parts\": [{\"text\": \"Write a short poem about coding.\"}]\n    }\n  ],\n  \"generationConfig\": {\n    \"temperature\": 0.9,\n    \"maxOutputTokens\": 2048\n  }\n}",
+    "description": "Streaming version of generateContent. Returns Server-Sent Events.",
+    "params": [
+      {
+        "name": "model_path",
+        "type": "text",
+        "required": true,
+        "default": "gemini-2.5-flash",
+        "description": "Model ID (gemini-2.5-flash, gemini-2.5-pro, gemini-1.5-pro, gemini-1.5-flash)"
+      }
+    ],
+    "expectedResponse": "SSE stream with chunks: data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"...\"}]}}]}"
+  },
+  {
+    "name": "[Gemini] Web Search",
+    "endpoint": "/api/v1/gemini/v1beta/web-search",
+    "method": "POST",
+    "serverOnly": true,
+    "geminiAuth": true,
+    "params": [
+      {
+        "name": "query",
+        "type": "text",
+        "required": true,
+        "placeholder": "What is the latest news about AI?",
+        "description": "The search query"
+      },
+      {
+        "name": "model",
+        "type": "text",
+        "required": false,
+        "default": "gemini-2.5-flash",
+        "description": "Model ID (gemini-2.5-flash recommended)"
+      }
+    ],
+    "expectedResponse": "{\"query\": string, \"model\": string, \"answer\": string, \"sources\": [{\"uri\": string, \"title\": string}], \"groundingMetadata\": {...}}"
+  },
+  {
+    "name": "[Gemini] Chat Completions",
+    "endpoint": "/api/v1/gemini/chat/completions",
+    "method": "POST",
+    "serverOnly": true,
+    "geminiAuth": true,
+    "params": [
+      { 
+        "name": "model", 
+        "type": "text", 
+        "required": true, 
+        "default": "gemini-2.5-flash",
+        "description": "Model ID (gemini-2.5-pro, gemini-2.5-flash, gemini-1.5-pro, gemini-1.5-flash)"
+      },
+      { 
+        "name": "messages", 
+        "type": "json", 
+        "required": true, 
+        "default": "[{\"role\": \"user\", \"content\": \"Hello, how are you?\"}]",
+        "description": "Array of message objects with role and content"
+      },
+      { 
+        "name": "temperature", 
+        "type": "number", 
+        "required": false, 
+        "default": 0.7,
+        "description": "Sampling temperature (0.0-2.0)"
+      },
+      { 
+        "name": "max_tokens", 
+        "type": "number", 
+        "required": false, 
+        "default": 1024,
+        "description": "Maximum tokens in response"
+      },
+      { 
+        "name": "stream", 
+        "type": "boolean", 
+        "required": false, 
+        "default": false,
+        "description": "Enable streaming response"
+      }
+    ],
+    "expectedResponse": "{\"id\": string, \"object\": \"chat.completion\", \"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": string}}]}"
+  },
+  {
     "name": "Request LinkedIn Feed",
     "endpoint": "/api/v1/posts/request-feed",
     "method": "POST",

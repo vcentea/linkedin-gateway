@@ -14,6 +14,7 @@ class APIKeyInfo(BaseModel):
     name: Optional[str] = None
     csrf_token: Optional[str] = None
     linkedin_cookies: Optional[Dict[str, str]] = None
+    gemini_credentials: Optional[Dict[str, Any]] = Field(None, description="Gemini OAuth credentials (v1.2.0)")
     # Multi-key support fields (v1.1.0)
     instance_id: Optional[str] = Field(None, description="Unique instance identifier (e.g., chrome_1699123456789_a9b8c7d6)")
     instance_name: Optional[str] = Field(None, description="User-friendly instance name (e.g., 'Chrome - Windows')")
@@ -40,6 +41,11 @@ class CSRFTokenUpdate(BaseModel):
 class LinkedInCookiesUpdate(BaseModel):
     linkedin_cookies: Dict[str, str] = Field(..., description="All LinkedIn session cookies")
 
+
+# Schema for updating Gemini credentials (v1.2.0)
+class GeminiCredentialsUpdate(BaseModel):
+    gemini_credentials: Dict[str, Any] = Field(..., description="Gemini OAuth 2.0 credentials")
+
 # Schema for generating a new API key (v1.1.0)
 class APIKeyGenerateRequest(BaseModel):
     name: Optional[str] = Field(None, description="Optional custom name for the API key")
@@ -47,9 +53,11 @@ class APIKeyGenerateRequest(BaseModel):
     instance_id: Optional[str] = Field(None, description="Unique instance identifier from extension")
     instance_name: Optional[str] = Field(None, description="User-friendly instance name")
     browser_info: Optional[Dict[str, Any]] = Field(None, description="Browser metadata")
-    # Credentials (can be provided during generation)
+    # LinkedIn credentials (can be provided during generation)
     csrf_token: Optional[str] = Field(None, description="LinkedIn CSRF token for this key")
     linkedin_cookies: Optional[Dict[str, str]] = Field(None, description="LinkedIn session cookies for this key")
+    # Gemini credentials (v1.2.0)
+    gemini_credentials: Optional[Dict[str, Any]] = Field(None, description="Gemini OAuth credentials for this key")
 
 # Schema for listing API keys (v1.1.0)
 class APIKeyListResponse(BaseModel):

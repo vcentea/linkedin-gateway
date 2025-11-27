@@ -17,6 +17,11 @@ class APIKey(Base, UUIDMixin, TimestampMixin):
     - instance_id: Unique identifier for extension instance
     - instance_name: User-friendly name for the instance
     - browser_info: JSON metadata about the browser
+    
+    Gemini AI support (v1.2.0):
+    - gemini_credentials: Google OAuth 2.0 credentials for Gemini API
+      Contains: client_id, client_secret, token, refresh_token, scopes, 
+                token_uri, expiry, project_id
     """
     __tablename__ = "api_keys"
 
@@ -27,6 +32,7 @@ class APIKey(Base, UUIDMixin, TimestampMixin):
     description = Column(String)
     csrf_token = Column(String(255))
     linkedin_cookies = Column(JSONB, default={})
+    gemini_credentials = Column(JSONB, default={})
     last_used_at = Column(DateTime)
     is_active = Column(Boolean, default=True, index=True)
     rate_limit_config = Column(JSONB, default={})

@@ -44,6 +44,30 @@ echo -e "${GREEN}LinkedIn Gateway - $EDITION_TITLE${NC}"
 echo -e "${GREEN}======================================${NC}"
 echo ""
 
+# For Enterprise edition, verify SSH access first
+if [ "$EDITION" = "enterprise" ]; then
+    echo -e "${YELLOW}[Pre] Verifying Enterprise repository access...${NC}"
+    
+    # Source the setup script to get the verification function
+    source "$SCRIPT_DIR/setup-enterprise-keys.sh" 2>/dev/null || true
+    
+    if ! verify_enterprise_ssh_access 2>/dev/null; then
+        echo -e "${RED}======================================${NC}"
+        echo -e "${RED}Enterprise SSH Access Required${NC}"
+        echo -e "${RED}======================================${NC}"
+        echo ""
+        echo "To install the Enterprise edition, you need SSH access to the private repository."
+        echo ""
+        echo "Please run first:"
+        echo "  ./scripts/setup-enterprise-keys.sh"
+        echo ""
+        echo "Then add the generated SSH key to your GitHub account and request repository access."
+        echo ""
+        exit 1
+    fi
+    echo ""
+fi
+
 # Step 0: Git pull latest changes if in a git repository
 echo -e "${YELLOW}[0/7] Pulling latest changes...${NC}"
 cd "$PROJECT_ROOT"
@@ -285,9 +309,11 @@ echo -e "${YELLOW}[5/7] Verifying database initialization...${NC}"
 echo -e "  ${GREEN}→ Waiting for PostgreSQL to be ready...${NC}"
 
 # Wait for database to be fully ready
-DB_CONTAINER="${EDITION}-db"
+# Container names follow pattern: linkedin-gateway-{edition}-db
 if [ "$EDITION" = "saas" ]; then
     DB_CONTAINER="linkedin-gateway-saas-db"
+elif [ "$EDITION" = "enterprise" ]; then
+    DB_CONTAINER="linkedin-gateway-enterprise-db"
 else
     DB_CONTAINER="linkedin-gateway-core-db"
 fi
@@ -309,7 +335,24 @@ done
 # Check if tables were created
 echo ""
 echo -e "  ${GREEN}→ Checking if database schema was created...${NC}"
-TABLES_COUNT=$(docker exec $DB_CONTAINER psql -U ${DB_USER:-linkedin_gateway_user} -d ${DB_NAME:-LinkedinGateway} -t -c "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';" 2>/dev/null | tr -d '[:space:]')
+# Capture stderr to debug connection issues
+PSQL_OUTPUT=$(docker exec $DB_CONTAINER psql -U ${DB_USER:-linkedin_gateway_user} -d ${DB_NAME:-LinkedinGateway} -t -c "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';" 2>&1)
+PSQL_EXIT_CODE=$?
+
+if [ $PSQL_EXIT_CODE -eq 0 ]; then
+    TABLES_COUNT=$(echo "$PSQL_OUTPUT" | tr -d '[:space:]')
+else
+    # Connection failed
+    TABLES_COUNT=""
+    echo -e "  ${RED}⚠ DB Connection Failed:${NC}"
+    echo "$PSQL_OUTPUT"
+    
+    if echo "$PSQL_OUTPUT" | grep -q "password authentication failed"; then
+        echo -e "  ${RED}⚠ Password mismatch detected!${NC}"
+        echo "  The password in .env does not match the running database container."
+        echo "  Run ./scripts/debug-db-connection.sh for diagnosis."
+    fi
+fi
 
 # Check if this is a fresh install (no alembic_version table)
 ALEMBIC_VERSION_EXISTS=$(docker exec $DB_CONTAINER psql -U ${DB_USER:-linkedin_gateway_user} -d ${DB_NAME:-LinkedinGateway} -t -c "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'alembic_version');" 2>/dev/null | tr -d '[:space:]')
@@ -320,7 +363,12 @@ IS_FRESH_INSTALL=false
 if [ -z "$TABLES_COUNT" ]; then
     echo -e "  ${YELLOW}→ Could not query database, retrying...${NC}"
     sleep 2
-    TABLES_COUNT=$(docker exec $DB_CONTAINER psql -U ${DB_USER:-linkedin_gateway_user} -d ${DB_NAME:-LinkedinGateway} -t -c "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';" 2>/dev/null | tr -d '[:space:]')
+    PSQL_OUTPUT=$(docker exec $DB_CONTAINER psql -U ${DB_USER:-linkedin_gateway_user} -d ${DB_NAME:-LinkedinGateway} -t -c "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';" 2>&1)
+    if [ $? -eq 0 ]; then
+        TABLES_COUNT=$(echo "$PSQL_OUTPUT" | tr -d '[:space:]')
+    else
+        echo "$PSQL_OUTPUT"
+    fi
 fi
 
 if [ -z "$TABLES_COUNT" ] || [ "$TABLES_COUNT" -eq "0" ]; then

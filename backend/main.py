@@ -42,6 +42,10 @@ from app.api.v1.server_info import router as server_info_router
 from app.api.v1.auth_config import router as auth_config_router
 from app.api.v1.utils import router as utils_router
 from app.api.dependencies import get_ws_handler as shared_get_ws_handler
+# Gemini AI endpoints (v1.2.0)
+from app.api.v1.gemini_chat import router as gemini_chat_router
+from app.api.v1.gemini_auth import router as gemini_auth_router
+from app.api.v1.gemini_v1beta import router as gemini_v1beta_router
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -202,6 +206,10 @@ app.include_router(messages_v1_router, prefix="/api/v1")
 app.include_router(server_info_router, prefix="/api/v1")
 app.include_router(auth_config_router, prefix="/auth")
 app.include_router(utils_router, prefix="/api/v1")
+# Gemini AI endpoints (v1.2.0)
+app.include_router(gemini_chat_router, prefix="/api/v1")  # Gemini chat: /api/v1/gemini/chat/completions
+app.include_router(gemini_v1beta_router, prefix="/api/v1")  # Gemini v1beta: /api/v1/gemini/v1beta/models
+app.include_router(gemini_auth_router, prefix="/api/v1")  # Gemini OAuth: /api/v1/gemini/auth/*
 
 # Remove duplicate pending_post_requests if it's the same as pending_ws_requests
 # pending_post_requests: Dict[str, Dict] = {} 

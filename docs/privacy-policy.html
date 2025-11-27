@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - LinkedIn Gateway</title>
+    <style>
+        :root {
+            --primary: #0077b5;
+            --secondary: #00a0dc;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --text: #333;
+            --border: #e1e4e8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.7;
+            color: var(--text);
+            background: var(--light);
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--dark) 0%, #16213e 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        h3 {
+            color: var(--dark);
+            font-size: 1.2rem;
+            margin: 25px 0 15px 0;
+        }
+        
+        p {
+            margin-bottom: 15px;
+        }
+        
+        ul, ol {
+            margin: 15px 0 15px 25px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        strong {
+            color: var(--dark);
+        }
+        
+        .highlight {
+            background: #e8f4fd;
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95rem;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            background: var(--light);
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .yes { color: #28a745; font-weight: 600; }
+        .no { color: #dc3545; font-weight: 600; }
+        
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .contact-box {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .contact-box a {
+            color: white;
+            font-weight: 600;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .toc {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .toc h3 {
+            margin-top: 0;
+        }
+        
+        .toc ol {
+            columns: 2;
+            column-gap: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            header h1 { font-size: 1.8rem; }
+            .card { padding: 25px; }
+            .toc ol { columns: 1; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🔒 Privacy Policy</h1>
+        <p>LinkedIn Gateway Chrome Extension</p>
+        <p style="margin-top: 15px; font-size: 0.9rem;">Last Updated: November 26, 2025</p>
+    </header>
+    
+    <div class="container">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ol>
+                <li><a href="#introduction">Introduction</a></li>
+                <li><a href="#information">Information We Collect</a></li>
+                <li><a href="#usage">How We Use Your Information</a></li>
+                <li><a href="#storage">Data Storage and Security</a></li>
+                <li><a href="#third-party">Third-Party Services</a></li>
+                <li><a href="#sharing">Data Sharing</a></li>
+                <li><a href="#rights">Your Rights and Choices</a></li>
+                <li><a href="#children">Children's Privacy</a></li>
+                <li><a href="#international">International Users</a></li>
+                <li><a href="#changes">Changes to This Policy</a></li>
+                <li><a href="#contact">Contact Us</a></li>
+            </ol>
+        </div>
+        
+        <div class="card" id="introduction">
+            <h2>1. Introduction</h2>
+            <p>This Privacy Policy describes how LinkedIn Gateway ("we", "our", or "the Extension") collects, uses, and protects your information when you use our Chrome extension and related services.</p>
+            <p>LinkedIn Gateway is a productivity tool that helps you interact with LinkedIn and AI services through a secure proxy. We are committed to protecting your privacy and being transparent about our data practices.</p>
+        </div>
+        
+        <div class="card" id="information">
+            <h2>2. Information We Collect</h2>
+            
+            <h3>2.1 LinkedIn Integration</h3>
+            <p>When you connect your LinkedIn account, we collect:</p>
+            <ul>
+                <li><strong>LinkedIn Session Cookies</strong>: Temporary authentication cookies that allow the Extension to make requests on your behalf.</li>
+                <li><strong>LinkedIn Profile Information</strong>: Your public profile data (name, profile picture, headline) for display purposes.</li>
+                <li><strong>CSRF Tokens</strong>: Security tokens required for authenticated requests.</li>
+            </ul>
+            
+            <div class="highlight">
+                <strong>We do NOT collect:</strong> Your LinkedIn password, private messages, or your connections' private information.
+            </div>
+            
+            <h3>2.2 Gemini AI Integration</h3>
+            <p>When you connect your Google account for Gemini AI features, we collect:</p>
+            <ul>
+                <li><strong>OAuth Access Tokens</strong>: Temporary tokens for Google AI services access.</li>
+                <li><strong>Google Email Address</strong>: For identification and display purposes.</li>
+                <li><strong>Profile Picture URL</strong>: For display in the Extension dashboard.</li>
+            </ul>
+            
+            <div class="highlight">
+                <strong>We do NOT collect:</strong> Your Google password, Gmail content, Google Drive files, or any Google Workspace data.
+            </div>
+            
+            <h3>2.3 API Keys & Usage Data</h3>
+            <ul>
+                <li><strong>Generated API Keys</strong>: Authenticate your requests to our backend services.</li>
+                <li><strong>Request Logs</strong>: For security, debugging, and rate limiting (timestamps, endpoints, status codes).</li>
+                <li><strong>Error Logs</strong>: Technical information to improve the service.</li>
+            </ul>
+            
+            <div class="warning">
+                <strong>We do NOT collect:</strong> Browsing history, form data from other websites, personal files, or location data.
+            </div>
+        </div>
+        
+        <div class="card" id="usage">
+            <h2>3. How We Use Your Information</h2>
+            <ol>
+                <li><strong>Provide Core Services</strong>: Enable LinkedIn API and Gemini AI features through our secure proxy.</li>
+                <li><strong>Authentication</strong>: Verify your identity and maintain secure sessions.</li>
+                <li><strong>Rate Limiting</strong>: Ensure fair usage and service quality.</li>
+                <li><strong>Security</strong>: Detect and prevent unauthorized access or abuse.</li>
+                <li><strong>Debugging</strong>: Identify and fix technical issues.</li>
+                <li><strong>Service Improvement</strong>: Analyze aggregated, non-personal usage patterns.</li>
+            </ol>
+        </div>
+        
+        <div class="card" id="storage">
+            <h2>4. Data Storage and Security</h2>
+            
+            <h3>4.1 Where Data is Stored</h3>
+            <ul>
+                <li><strong>Local Storage</strong>: Session cookies, tokens, and preferences stored in your browser.</li>
+                <li><strong>Backend Servers</strong>: API keys and session metadata on secured servers.</li>
+                <li><strong>Database</strong>: PostgreSQL with encrypted connections.</li>
+            </ul>
+            
+            <h3>4.2 Security Measures</h3>
+            <ul>
+                <li>🔐 <strong>TLS 1.3 Encryption</strong> for all data in transit</li>
+                <li>🔐 <strong>Encrypted Storage</strong> for sensitive credentials at rest</li>
+                <li>🔐 <strong>API Key Hashing</strong> - we cannot retrieve your original key</li>
+                <li>🔐 <strong>No Password Storage</strong> - we never have access to your passwords</li>
+                <li>🔐 <strong>Session Timeouts</strong> - tokens expire and require re-authentication</li>
+            </ul>
+            
+            <h3>4.3 Data Retention</h3>
+            <ul>
+                <li><strong>Session Data</strong>: Cleared when you disconnect or uninstall.</li>
+                <li><strong>API Logs</strong>: Retained 30 days, then automatically deleted.</li>
+                <li><strong>Account Data</strong>: Deleted upon account deletion request.</li>
+            </ul>
+        </div>
+        
+        <div class="card" id="third-party">
+            <h2>5. Third-Party Services</h2>
+            
+            <h3>5.1 LinkedIn</h3>
+            <p>Your use of LinkedIn through our Extension is subject to:</p>
+            <ul>
+                <li><a href="https://www.linkedin.com/legal/user-agreement" target="_blank">LinkedIn User Agreement</a></li>
+                <li><a href="https://www.linkedin.com/legal/privacy-policy" target="_blank">LinkedIn Privacy Policy</a></li>
+            </ul>
+            
+            <h3>5.2 Google (Gemini AI)</h3>
+            <p>Your use is subject to:</p>
+            <ul>
+                <li><a href="https://policies.google.com/terms" target="_blank">Google Terms of Service</a></li>
+                <li><a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></li>
+                <li><a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank">Google API Services User Data Policy</a></li>
+            </ul>
+        </div>
+        
+        <div class="card" id="sharing">
+            <h2>6. Data Sharing</h2>
+            
+            <div class="highlight">
+                <strong>We do NOT sell your data.</strong>
+            </div>
+            
+            <p>We may share data only in these limited circumstances:</p>
+            <ol>
+                <li><strong>With Your Consent</strong>: When you explicitly authorize sharing.</li>
+                <li><strong>Service Providers</strong>: Trusted providers under strict confidentiality agreements.</li>
+                <li><strong>Legal Requirements</strong>: If required by law or court order.</li>
+                <li><strong>Safety</strong>: To protect users or the public.</li>
+            </ol>
+        </div>
+        
+        <div class="card" id="rights">
+            <h2>7. Your Rights and Choices</h2>
+            
+            <p>You have the right to:</p>
+            <ul>
+                <li>✅ <strong>View</strong>: See what data we store about you</li>
+                <li>✅ <strong>Disconnect</strong>: Remove LinkedIn or Gemini connections anytime</li>
+                <li>✅ <strong>Delete</strong>: Request deletion of your account and data</li>
+                <li>✅ <strong>Export</strong>: Request a copy of your data</li>
+            </ul>
+            
+            <h3>How to Exercise Your Rights</h3>
+            <ul>
+                <li><strong>Disconnect Accounts</strong>: Use the "Disconnect" button in the Extension dashboard.</li>
+                <li><strong>Delete API Key</strong>: Use Extension settings.</li>
+                <li><strong>Account Deletion</strong>: Contact privacy@ainnovate.tech</li>
+            </ul>
+        </div>
+        
+        <div class="card" id="children">
+            <h2>8. Children's Privacy</h2>
+            <p>LinkedIn Gateway is not intended for individuals under 16 years of age. We do not knowingly collect personal information from children.</p>
+        </div>
+        
+        <div class="card" id="international">
+            <h2>9. International Users & GDPR</h2>
+            <p>We comply with applicable data protection laws, including GDPR for European users.</p>
+            
+            <h3>GDPR Rights (EU Users)</h3>
+            <ul>
+                <li>Right to access</li>
+                <li>Right to rectification</li>
+                <li>Right to erasure ("right to be forgotten")</li>
+                <li>Right to restrict processing</li>
+                <li>Right to data portability</li>
+                <li>Right to object</li>
+            </ul>
+            <p>To exercise these rights, contact <a href="mailto:privacy@ainnovate.tech">privacy@ainnovate.tech</a>.</p>
+        </div>
+        
+        <div class="card" id="changes">
+            <h2>10. Changes to This Policy</h2>
+            <p>We may update this Privacy Policy from time to time. We will notify you of significant changes by:</p>
+            <ul>
+                <li>Updating the "Last Updated" date</li>
+                <li>Displaying a notice in the Extension</li>
+                <li>Sending an email notification</li>
+            </ul>
+        </div>
+        
+        <div class="card">
+            <h2>Data Summary</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data Type</th>
+                        <th>Collected</th>
+                        <th>Local</th>
+                        <th>Server</th>
+                        <th>Shared</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>LinkedIn Cookies</td>
+                        <td class="yes">✓</td>
+                        <td class="yes">✓</td>
+                        <td class="yes">✓ (encrypted)</td>
+                        <td class="no">✗</td>
+                    </tr>
+                    <tr>
+                        <td>Google OAuth Tokens</td>
+                        <td class="yes">✓</td>
+                        <td class="yes">✓</td>
+                        <td class="yes">✓ (encrypted)</td>
+                        <td class="no">✗</td>
+                    </tr>
+                    <tr>
+                        <td>API Keys</td>
+                        <td class="yes">✓</td>
+                        <td class="yes">✓</td>
+                        <td class="yes">✓ (hashed)</td>
+                        <td class="no">✗</td>
+                    </tr>
+                    <tr>
+                        <td>Request Logs</td>
+                        <td class="yes">✓</td>
+                        <td class="no">✗</td>
+                        <td class="yes">✓ (30 days)</td>
+                        <td class="no">✗</td>
+                    </tr>
+                    <tr>
+                        <td>Passwords</td>
+                        <td class="no">✗</td>
+                        <td class="no">✗</td>
+                        <td class="no">✗</td>
+                        <td class="no">✗</td>
+                    </tr>
+                    <tr>
+                        <td>Browsing History</td>
+                        <td class="no">✗</td>
+                        <td class="no">✗</td>
+                        <td class="no">✗</td>
+                        <td class="no">✗</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="card" id="contact">
+            <div class="contact-box">
+                <h2 style="color: white; border: none; margin-bottom: 15px;">Contact Us</h2>
+                <p>Questions about this Privacy Policy?</p>
+                <p style="margin-top: 15px;">
+                    📧 <a href="mailto:privacy@ainnovate.tech">privacy@ainnovate.tech</a><br>
+                    🌐 <a href="https://ainnovate.tech">ainnovate.tech</a><br>
+                    💻 <a href="https://github.com/vcentea/LinkedinGateway">GitHub Repository</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2025 AInnovate. LinkedIn Gateway is open source.</p>
+        <p style="margin-top: 10px;">
+            <a href="https://github.com/vcentea/LinkedinGateway">View Source Code on GitHub</a>
+        </p>
+    </footer>
+</body>
+</html>
+

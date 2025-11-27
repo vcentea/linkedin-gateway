@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwF5IBKRUJB+ETI3fWhw8IvugoLq7f/STIfF0/8O9gvxBK06ZcXziWJzStu0ysXdGg5YEvMDOKdbQoUAqTvIi/wwniIwZXWY4I3W5e5rfEr+KVHUoHGtL+RWY7Y1AtCUq8vTrZPAcaNlss8DKJIvx1/U6BAUAIqB4nzXISfxebexYPXMp1EiZ64ILUY7Lg4oY8Gyf7UUNhKOmM3WaHF53TP5zQ5wkJoU/OgpF8rDUS7znBccJML/PvfRQ27qQr8lziSClKkPfTX1irjqcXice2/yI80M4OkebU9uV+0NUINzWwa5pGIcvw3CqdWp1s7Y7tftWLxV7xVeTkuv7L0u7UQIDAQAB",
   "name": "LinkedIn Gateway",
   "short_name": "LinkedIn Gateway",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "A Chrome extension for connecting your LinkedIn profile with matching opportunities",
   "icons": {
     "16": "assets/icons/logo16.png",
@@ -30,6 +31,7 @@
   ],
   "host_permissions": [
     "https://lg.ainnovate.tech/*",
+    "https://lgdev.ainnovate.tech/*",
     "https://www.linkedin.com/*"
   ],
   "optional_host_permissions": [

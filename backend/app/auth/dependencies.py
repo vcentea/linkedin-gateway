@@ -351,4 +351,119 @@ def get_api_key_validator(request_body_field: str = "api_key"):
             db=db
         )
     
-    return validate_key 
+    return validate_key
+
+
+# ============================================================================
+# Gemini API Key Authentication (v1.2.0)
+# Separate from LinkedIn authentication to support Google-style headers
+# ============================================================================
+
+GEMINI_API_KEY_HEADER_NAME = "x-goog-api-key"
+gemini_api_key_header_scheme = APIKeyHeader(name=GEMINI_API_KEY_HEADER_NAME, auto_error=False)
+
+async def validate_gemini_api_key(
+    api_key_from_body: Optional[str] = None,
+    gemini_api_key_header: Optional[str] = Depends(gemini_api_key_header_scheme),
+    standard_api_key_header: Optional[str] = Depends(api_key_header_scheme),
+    db: AsyncSession = Depends(get_db)
+) -> APIKey:
+    """
+    Validates an API key for Gemini endpoints.
+    
+    Accepts API key from (in order of precedence):
+    1. x-goog-api-key header (Google-style, preferred for Gemini)
+    2. X-API-Key header (standard LinkedIn Gateway style)
+    3. api_key field in request body
+    
+    This allows Gemini endpoints to work with both Google-compatible clients
+    and existing LinkedIn Gateway clients using the same API key.
+    
+    Args:
+        api_key_from_body: API key from request body (optional)
+        gemini_api_key_header: API key from x-goog-api-key header (optional)
+        standard_api_key_header: API key from X-API-Key header (optional)
+        db: Database session
+        
+    Returns:
+        APIKey: The validated API key object with Gemini credentials
+        
+    Raises:
+        HTTPException 403: If no valid API key provided
+        HTTPException 401: If key is invalid, inactive, or verification fails
+    """
+    # Check headers in order of precedence: x-goog-api-key > X-API-Key > body
+    api_key_to_validate = gemini_api_key_header or standard_api_key_header or api_key_from_body
+    
+    if not api_key_to_validate:
+        logger.warning("[GEMINI] API key authentication failed: No API key provided")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authenticated: API Key required (provide via x-goog-api-key header, X-API-Key header, or request body)"
+        )
+    
+    # Determine source for logging
+    if gemini_api_key_header:
+        source = "header (x-goog-api-key)"
+    elif standard_api_key_header:
+        source = "header (X-API-Key)"
+    else:
+        source = "request body (api_key)"
+    
+    logger.info(f"[GEMINI] API key received from {source}, validating...")
+    
+    # Expected format: LKG_prefix_secret
+    if not api_key_to_validate.startswith(API_KEY_PREFIX) or '_' not in api_key_to_validate[len(API_KEY_PREFIX):]:
+        logger.warning(f"[GEMINI] API key authentication failed: Invalid format from {source}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid API Key format"
+        )
+    
+    try:
+        prefix_plus_secret = api_key_to_validate[len(API_KEY_PREFIX):]
+        prefix, secret_part = prefix_plus_secret.split('_', 1)
+        
+        if len(prefix) != API_KEY_PREFIX_LENGTH:
+            logger.warning(f"[GEMINI] API key authentication failed: Incorrect prefix length from {source}")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid API Key format (prefix length)")
+    
+    except ValueError:
+        logger.warning(f"[GEMINI] API key authentication failed: Value error parsing key from {source}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid API Key format (parsing error)"
+        )
+    
+    # Find the key by prefix
+    db_api_key = await api_key_crud.get_api_key_by_prefix(db, prefix=prefix)
+    
+    if not db_api_key:
+        logger.warning(f"[GEMINI] API key authentication failed: No key found for prefix '{prefix}'")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API Key"
+        )
+    
+    if not db_api_key.is_active:
+        logger.warning(f"[GEMINI] API key authentication failed: Key with prefix '{prefix}' is inactive")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API Key is inactive"
+        )
+    
+    # Verify the secret part
+    if not security.verify_password(secret_part, db_api_key.key_hash):
+        logger.warning(f"[GEMINI] API key authentication failed: Invalid secret for prefix '{prefix}'")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API Key"
+        )
+    
+    # Update last_used_at timestamp
+    db_api_key.last_used_at = datetime.utcnow()
+    db.add(db_api_key)
+    await db.flush()
+    
+    logger.info(f"[GEMINI] API key authentication successful for prefix '{prefix}' from {source}, user ID: {db_api_key.user_id}")
+    return db_api_key

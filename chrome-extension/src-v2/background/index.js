@@ -21,6 +21,7 @@ import { logger } from '../shared/utils/logger.js';
 import * as authController from './controllers/auth.controller.js';
 import * as websocketController from './controllers/websocket.controller.js';
 import * as linkedinController from './controllers/linkedin.controller.js';
+import * as geminiController from './controllers/gemini.controller.js'; // Gemini AI (v1.2.0)
 import * as apiController from './controllers/api.controller.js';
 import * as messagingService from './services/messaging.service.js';
 import { initializeInstance } from './services/instance.service.js'; // Multi-key support (v1.1.0)
@@ -47,12 +48,14 @@ function init() {
   authController.init();
   websocketController.init();
   linkedinController.init();
+  geminiController.init(); // Gemini AI (v1.2.0)
   apiController.init();
   
   // Register controllers with messaging service
   messagingService.registerMessageHandler(authController);
   messagingService.registerMessageHandler(websocketController);
   messagingService.registerMessageHandler(linkedinController);
+  messagingService.registerMessageHandler(geminiController); // Gemini AI (v1.2.0)
   messagingService.registerMessageHandler(apiController);
   
   // Debug: registering extension icon click listener

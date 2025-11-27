@@ -1,6 +1,6 @@
 {
   "name": "linkedin-gateway",
-  "version": "1.5.0",
+  "version": "1.8.0",
   "description": "A Chrome extension for connecting your LinkedIn profile with matching opportunities",
   "main": "index.js",
   "scripts": {

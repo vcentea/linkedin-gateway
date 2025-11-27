@@ -11,10 +11,16 @@
  * @fileoverview Authentication service implementation
  */
 
-import { fetchUserProfile, logoutBackend, getApiKey as apiGetApiKey, generateApiKey as apiGenerateApiKey, deleteApiKey as apiDeleteApiKey, updateCsrfToken as apiUpdateCsrfToken, updateLinkedInCookies as apiUpdateLinkedInCookies } from '../../shared/api/index.js';
+import { fetchUserProfile, logoutBackend, getApiKey as apiGetApiKey, generateApiKey as apiGenerateApiKey, deleteApiKey as apiDeleteApiKey, updateCsrfToken as apiUpdateCsrfToken, updateLinkedInCookies as apiUpdateLinkedInCookies, updateGeminiCredentials as apiUpdateGeminiCredentials } from '../../shared/api/index.js';
 import { getAuthData, clearAuthData, saveAuthData, saveApiKeyInfo, clearApiKeyInfo } from '../services/storage.service.js';
 import { logger } from '../../shared/utils/logger.js';
 import { handleError } from '../../shared/utils/error-handler.js';
+import * as instanceService from './instance.service.js';
+import * as websocketService from './websocket.service.js';
+// Import linkedinController statically to avoid dynamic import issues in Service Worker
+import * as linkedinController from '../controllers/linkedin.controller.js';
+// Import Gemini controller for credential cleanup on logout and status refresh
+import { clearCredentials as clearGeminiCredentials, triggerStatusRefresh as refreshGeminiStatus } from '../controllers/gemini.controller.js';
 
 // User data cache
 let userData = null;
@@ -81,6 +87,7 @@ export async function checkAuthAndGetProfile() {
 /**
  * Handle user logout
  * Logs out from the backend API and clears local storage
+ * Also clears Gemini credentials to prevent cross-user credential leakage
  * 
  * @returns {Promise<{success: boolean, backendError?: string}>} Logout result
  */
@@ -91,11 +98,19 @@ export async function performLogout() {
         
         // Close WebSocket connection before logout
         try {
-            const websocketService = await import('./websocket.service.js');
             logger.info('Closing WebSocket connection on logout', 'auth.service');
             websocketService.closeWebSocket(false); // Don't clear server URL, just close connection
         } catch (wsError) {
             logger.warn(`Could not close WebSocket on logout: ${wsError.message}`, 'auth.service');
+        }
+        
+        // Clear Gemini credentials BEFORE clearing auth data
+        // This must happen while we still have userId context
+        try {
+            logger.info('Clearing Gemini credentials on logout', 'auth.service');
+            await clearGeminiCredentials();
+        } catch (geminiError) {
+            logger.warn(`Could not clear Gemini credentials: ${geminiError.message}`, 'auth.service');
         }
         
         // Send logout request to backend if token exists
@@ -112,6 +127,11 @@ export async function performLogout() {
         handleError(error, 'auth.service.performLogout');
         logger.error(`Logout error: ${error.message}`, 'auth.service');
         // Still try to clear storage
+        try {
+            await clearGeminiCredentials();
+        } catch (e) {
+            // Ignore
+        }
         await clearAuthData();
         userData = null; // Clear cached user data
         return { success: true, backendError: error.message };
@@ -143,7 +163,12 @@ export async function getApiKey() {
         if (response.success) {
             // Successfully determined key status (exists or not)
             logger.info(`API Key status determined. Exists: ${response.keyExists}`, logContext);
-            return { success: true, keyExists: response.keyExists };
+            // Include apiKeyInfo for gemini_credentials and other data
+            return { 
+                success: true, 
+                keyExists: response.keyExists,
+                apiKeyInfo: response.apiKeyInfo
+            };
         } else {
             // API call failed
             logger.error(`apiGetApiKey failed: ${response.error}`, logContext);
@@ -168,15 +193,20 @@ export async function getApiKey() {
 export async function generateApiKey() {
     logger.info('Generating new API key via backend', 'auth.service');
     try {
-        const { accessToken } = await getAuthData();
+        logger.info('Getting auth data...', 'auth.service');
+        const authData = await getAuthData();
+        logger.info(`Auth data received: ${JSON.stringify({ hasToken: !!authData?.accessToken, hasUserId: !!authData?.userId })}`, 'auth.service');
+        const { accessToken } = authData;
         if (!accessToken) {
+            logger.error('No access token found - user not authenticated', 'auth.service');
             throw new Error('Not authenticated');
         }
+        logger.info('Access token found, continuing...', 'auth.service');
         
         // Get instance information for multi-key support (v1.1.0)
         let instanceInfo = null;
         try {
-            const instanceService = await import('./instance.service.js');
+            logger.info('Getting instance info...', 'auth.service');
             instanceInfo = await instanceService.getInstanceInfo();
             logger.info(`Instance info captured: ID=${instanceInfo.instance_id}, Name=${instanceInfo.instance_name}`, 'auth.service');
         } catch (err) {
@@ -184,13 +214,14 @@ export async function generateApiKey() {
             // Continue without it - backward compatibility
         }
         
+        logger.info('Getting LinkedIn credentials...', 'auth.service');
+        
         // Get current CSRF token and LinkedIn cookies to store with the new key
         let csrfToken = null;
         let linkedinCookies = null;
         
         try {
-            // Import linkedin controller dynamically
-            const linkedinController = await import('../controllers/linkedin.controller.js');
+            logger.info('Getting CSRF token and cookies from linkedin controller...', 'auth.service');
             csrfToken = await linkedinController.getCsrfToken().catch(() => null);
             linkedinCookies = await linkedinController.getAllLinkedInCookies().catch(() => null);
             
@@ -205,6 +236,7 @@ export async function generateApiKey() {
             // Continue without them - not critical
         }
         
+        logger.info('Calling apiGenerateApiKey...', 'auth.service');
         const response = await apiGenerateApiKey(
             accessToken, 
             csrfToken || undefined, 
@@ -235,6 +267,17 @@ export async function generateApiKey() {
         } catch (error) {
             logger.warn(`Could not refresh backend credentials: ${error.message}`, 'auth.service');
             // Non-critical - credentials will be refreshed on next WebSocket reconnect anyway
+        }
+
+        // Refresh Gemini status to sync with new API key's credentials
+        // This ensures dashboard shows correct Gemini state after key regeneration
+        // Small delay to ensure backend has committed the transaction
+        try {
+            logger.info('Triggering Gemini status refresh after API key generation', 'auth.service');
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for DB commit
+            await refreshGeminiStatus();
+        } catch (geminiError) {
+            logger.warn(`Could not refresh Gemini status: ${geminiError.message}`, 'auth.service');
         }
 
         return { success: true, key: response.key };
@@ -302,6 +345,34 @@ export async function updateLinkedInCookies(linkedinCookies) {
 }
 
 /**
+ * Update Gemini credentials for the current user's API key (v1.2.0)
+ * 
+ * @param {Object} geminiCredentials - Gemini OAuth credentials object
+ * @returns {Promise<{success: boolean, error?: string}>} Result of the update
+ */
+export async function updateGeminiCredentials(geminiCredentials) {
+    const logContext = 'auth.service:updateGeminiCredentials';
+    logger.info('Updating Gemini credentials via backend', logContext);
+    try {
+        const { accessToken } = await getAuthData();
+        if (!accessToken) {
+            return { success: false, error: 'Not authenticated' };
+        }
+        const result = await apiUpdateGeminiCredentials(accessToken, geminiCredentials);
+        if (result.success) {
+            logger.info('Gemini credentials updated successfully', logContext);
+        } else {
+            logger.warn(`Failed to update Gemini credentials: ${result.error}`, logContext);
+        }
+        return result;
+    } catch (error) {
+        handleError(error, logContext);
+        logger.error(`Error updating Gemini credentials: ${error.message}`, logContext);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
  * Update backend credentials (CSRF token and LinkedIn cookies)
  * Called after WebSocket reconnection to ensure backend has latest credentials
  *
@@ -326,7 +397,6 @@ export async function updateBackendCredentials() {
         let linkedinCookies = null;
 
         try {
-            const linkedinController = await import('../controllers/linkedin.controller.js');
             csrfToken = await linkedinController.getCsrfToken().catch(() => null);
             linkedinCookies = await linkedinController.getAllLinkedInCookies().catch(() => null);
         } catch (err) {
@@ -396,13 +466,28 @@ export async function deleteApiKey() {
         await clearApiKeyInfo();
         logger.info('API key info cleared from storage', 'auth.service');
         
+        // Clear Gemini credentials since API key is deleted
+        try {
+            logger.info('Clearing Gemini credentials after API key deletion', 'auth.service');
+            await clearGeminiCredentials();
+        } catch (geminiError) {
+            logger.warn(`Could not clear Gemini credentials: ${geminiError.message}`, 'auth.service');
+        }
+        
         // Disconnect WebSocket since key is deleted
         try {
-            const websocketService = await import('./websocket.service.js');
             logger.info('Disconnecting WebSocket after key deletion', 'auth.service');
-            await websocketService.disconnectWebSocket();
+            websocketService.closeWebSocket();
         } catch (wsError) {
             logger.warn(`Could not disconnect WebSocket after key deletion: ${wsError.message}`, 'auth.service');
+        }
+        
+        // Refresh Gemini status to update UI (will show as disconnected)
+        try {
+            logger.info('Triggering Gemini status refresh after API key deletion', 'auth.service');
+            await refreshGeminiStatus();
+        } catch (geminiError) {
+            logger.warn(`Could not refresh Gemini status: ${geminiError.message}`, 'auth.service');
         }
         
         return { success: true };
@@ -430,6 +515,21 @@ export async function hasValidToken() {
         handleError(error, 'auth.service.hasValidToken');
         logger.error(`Error checking token validity: ${error.message}`, 'auth.service');
         return false;
+    }
+}
+
+/**
+ * Get the current access token
+ * 
+ * @returns {Promise<string|null>} The access token or null if not authenticated
+ */
+export async function getAccessToken() {
+    try {
+        const { accessToken } = await getAuthData();
+        return accessToken || null;
+    } catch (error) {
+        handleError(error, 'auth.service.getAccessToken');
+        return null;
     }
 }
 
@@ -468,7 +568,6 @@ export async function saveAuthSession(authData) {
             // Trigger WebSocket connection after successful login
             // Close any existing connection first to ensure clean reconnect with new user
             try {
-                const websocketService = await import('../services/websocket.service.js');
                 logger.info('Triggering WebSocket connection after successful login', 'auth.service');
                 // Close existing connection if any (will be reopened with new user_id)
                 websocketService.closeWebSocket(false);
@@ -496,7 +595,6 @@ export async function saveAuthSession(authData) {
             // Trigger WebSocket connection after successful login
             // Close any existing connection first to ensure clean reconnect with new user
             try {
-                const websocketService = await import('../services/websocket.service.js');
                 logger.info('Triggering WebSocket connection after successful login', 'auth.service');
                 // Close existing connection if any (will be reopened with new user_id)
                 websocketService.closeWebSocket(false);

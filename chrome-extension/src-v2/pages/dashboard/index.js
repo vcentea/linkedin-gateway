@@ -8,12 +8,12 @@ import { formatDate } from '../../shared/utils/date.utils.js';
 import { sendMessageToBackground } from '../../shared/utils/chrome-messaging.js';
 import { Header } from '../components/common/Header.js';
 import { LinkedInStatus } from '../components/dashboard/LinkedInStatus.js';
+import { GeminiStatus } from '../components/dashboard/GeminiStatus.js'; // Gemini AI (v1.2.0)
 import { DashboardCard } from '../components/dashboard/DashboardCard.js';
 import { ApiStatus } from '../components/dashboard/ApiStatus.js';
 import { ApiKeyManager } from '../components/dashboard/ApiKeyManager.js';
 import { ServerSettings } from '../components/dashboard/ServerSettings.js';
 import { ServerInfoTiles } from '../components/dashboard/ServerInfoTiles.js';
-import { checkBackendCompatibility } from '../../shared/utils/version-check.js';
 
 // DOM Elements
 /** @type {HTMLElement|null} */
@@ -28,6 +28,8 @@ const dashboard = document.getElementById('dashboard');
 let header;
 /** @type {LinkedInStatus|null} */
 let linkedInStatus;
+/** @type {GeminiStatus|null} */
+let geminiStatus; // Gemini AI (v1.2.0)
 /** @type {DashboardCard|null} */
 let dashboardCard;
 /** @type {ApiStatus|null} */
@@ -55,6 +57,7 @@ async function init() {
         // Only initialize components if authenticated
         header = new Header();
         linkedInStatus = new LinkedInStatus();
+        geminiStatus = new GeminiStatus(); // Gemini AI (v1.2.0)
         dashboardCard = new DashboardCard();
         
         // Load user profile to populate the dashboard
@@ -185,8 +188,7 @@ function displayDashboard(userData) {
         // Initialize API key manager
         apiKeyManager = new ApiKeyManager();
         
-        // Check backend version compatibility after dashboard is displayed (Phase 3.3)
-        checkBackendVersion();
+        // Version checking is now handled by the ServerSettings component
         
         logger.info('Dashboard displayed successfully', 'dashboard/index');
     } catch (error) {
@@ -240,69 +242,7 @@ function loadDashboardContent(userData) {
     }
 }
 
-/**
- * Check backend version compatibility (Phase 3.3)
- * Shows version status in the Services Availability card
- */
-async function checkBackendVersion() {
-    const context = 'dashboard/index.checkBackendVersion';
-    
-    try {
-        logger.info('Checking backend compatibility', context);
-        
-        // Check compatibility (access token is optional for /version endpoint)
-        const compatibility = await checkBackendCompatibility();
-        
-        if (!compatibility.compatible) {
-            logger.warn(`Backend incompatible: ${compatibility.message}`, context);
-            showBackendVersionWarning(compatibility.backendVersion);
-        } else {
-            logger.info(`Backend compatible: v${compatibility.backendVersion}`, context);
-        }
-        
-    } catch (error) {
-        handleError(error, context);
-        // Don't break dashboard if version check fails
-        logger.error('Version check failed, continuing anyway', context);
-    }
-}
-
-/**
- * Show backend version warning in Services Availability card (Phase 3.3)
- * @param {string} backendVersion - Backend version detected
- */
-function showBackendVersionWarning(backendVersion) {
-    const context = 'dashboard/index.showBackendVersionWarning';
-    logger.info('Displaying backend version warning', context);
-    
-    try {
-        const versionStatusDiv = document.getElementById('backend-version-status');
-        const versionTextSpan = document.getElementById('backend-version-text');
-        
-        if (!versionStatusDiv || !versionTextSpan) {
-            logger.error('Version status elements not found', context);
-            return;
-        }
-        
-        // Build version message
-        const MIN_VERSION = "1.1.0";
-        let versionText = `Required: v${MIN_VERSION}`;
-        if (backendVersion && backendVersion !== "unknown") {
-            versionText += ` • Current: ${backendVersion}`;
-        } else {
-            versionText += ` • Current: Unknown`;
-        }
-        
-        versionTextSpan.textContent = versionText;
-        versionStatusDiv.style.display = 'flex';
-        
-        logger.info('Backend version warning displayed', context);
-        
-    } catch (error) {
-        handleError(error, context);
-        logger.error('Failed to display version warning', context);
-    }
-}
+// Version checking is now handled by the ServerSettings component
 
 /**
  * Show error message

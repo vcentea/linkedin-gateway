@@ -102,6 +102,22 @@ export const MESSAGE_TYPES = {
   CONTENT_SCRIPT_READY: 'content_script_ready',
   /** Request from UI to find an active content script tab */
   GET_ACTIVE_LINKEDIN_TAB: 'get_active_linkedin_tab',
+  
+  // Gemini AI Integration (v1.2.0)
+  /** Request to check if Gemini credentials are valid */
+  CHECK_GEMINI_AUTH: 'check_gemini_auth',
+  /** Request to start Gemini OAuth flow */
+  START_GEMINI_OAUTH: 'start_gemini_oauth',
+  /** Submit authorization code from OAuth flow */
+  SUBMIT_GEMINI_AUTH_CODE: 'submit_gemini_auth_code',
+  /** Request to get current Gemini connection status */
+  GET_GEMINI_STATUS: 'get_gemini_status',
+  /** Notification that Gemini status has updated */
+  GEMINI_STATUS_UPDATE: 'gemini_status_update',
+  /** Request to update Gemini credentials to backend */
+  UPDATE_GEMINI_CREDENTIALS: 'update_gemini_credentials',
+  /** Request to disconnect Gemini account */
+  DISCONNECT_GEMINI: 'disconnect_gemini',
 
   // Add other message types as needed
 };

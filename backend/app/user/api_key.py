@@ -15,6 +15,7 @@ from app.schemas.api_key import (
     APIKeyInfo,
     CSRFTokenUpdate,
     LinkedInCookiesUpdate,
+    GeminiCredentialsUpdate,
     WebhookConfigUpdate
 )
 from pydantic import BaseModel
@@ -194,6 +195,45 @@ async def update_linkedin_cookies_endpoint(
         )
     logger.info(f"LinkedIn cookies updated successfully for user ID: {current_user.id}")
     return APIKeyInfo.model_validate(updated_key)
+
+@router.patch("/api-key/gemini-credentials", response_model=APIKeyInfo)
+async def update_gemini_credentials_endpoint(
+    credentials_data: GeminiCredentialsUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update Gemini OAuth credentials for the current user's active API key.
+    
+    Expected credential structure:
+    {
+        "client_id": "...",
+        "client_secret": "...",
+        "token": "access_token",
+        "refresh_token": "refresh_token",
+        "scopes": ["https://www.googleapis.com/auth/cloud-platform", ...],
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "expiry": "2025-...",
+        "project_id": "optional-project-id"
+    }
+    
+    Returns the updated API key info.
+    """
+    logger.info(f"Updating Gemini credentials for user ID: {current_user.id}")
+    updated_key = await api_key_crud.update_gemini_credentials(
+        db=db, 
+        user_id=current_user.id, 
+        gemini_credentials=credentials_data.gemini_credentials
+    )
+    if not updated_key:
+        logger.warning(f"No active API key found to update Gemini credentials for user ID: {current_user.id}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="No active API key found to update."
+        )
+    logger.info(f"Gemini credentials updated successfully for user ID: {current_user.id}")
+    return APIKeyInfo.model_validate(updated_key)
+
 
 @router.delete("/api-key", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_api_key(

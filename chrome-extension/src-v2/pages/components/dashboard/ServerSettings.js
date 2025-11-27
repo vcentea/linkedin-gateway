@@ -4,6 +4,7 @@
 import { logger } from '../../../shared/utils/logger.js';
 import { handleError, createError } from '../../../shared/utils/error-handler.js';
 import appConfig from '../../../shared/config/app.config.js';
+import { checkBackendCompatibility } from '../../../shared/utils/version-check.js';
 
 /**
  * Server configuration options
@@ -63,6 +64,11 @@ export class ServerSettings {
     }
     
     /**
+     * @type {Object|null}
+     */
+    versionCompatibility = null;
+    
+    /**
      * Initialize the component
      */
     async init() {
@@ -75,6 +81,9 @@ export class ServerSettings {
             
             // Fetch server info first
             await this.fetchServerInfo();
+            
+            // Check version compatibility
+            await this.checkVersionCompatibility();
             
             // Render the component
             this.render();
@@ -92,6 +101,19 @@ export class ServerSettings {
     }
     
     /**
+     * Check version compatibility between extension and backend
+     */
+    async checkVersionCompatibility() {
+        try {
+            this.versionCompatibility = await checkBackendCompatibility();
+            logger.info(`Version check result: ${JSON.stringify(this.versionCompatibility)}`, 'ServerSettings');
+        } catch (error) {
+            logger.error(`Version check failed: ${error.message}`, 'ServerSettings');
+            this.versionCompatibility = null;
+        }
+    }
+    
+    /**
      * Render the component HTML
      */
     render() {
@@ -104,6 +126,9 @@ export class ServerSettings {
         const editionColor = edition.toLowerCase().includes('saas') ? '#3b82f6' : 
                            edition.toLowerCase().includes('enterprise') ? '#8b5cf6' : 
                            '#10b981';
+        
+        // Build version warning HTML if needed
+        const versionWarningHtml = this.buildVersionWarningHtml();
         
         this.container.innerHTML = `
             <div class="server-settings" style="font-size: 15px;">
@@ -121,6 +146,7 @@ export class ServerSettings {
                             <strong style="color: #2c3e50;">Version:</strong> 
                             <span style="color: #5a6c7d;">${version}</span>
                         </p>
+                        ${versionWarningHtml}
                         <p style="margin: 8px 0; line-height: 1.6;">
                             <strong style="color: #2c3e50;">Edition:</strong> 
                             <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; background: ${editionColor}; color: white; font-size: 13px; font-weight: 500;">
@@ -143,6 +169,57 @@ export class ServerSettings {
                 <p class="info-text" style="margin-top: 18px; padding-top: 18px; border-top: 1px solid #e5e7eb; color: #7f8c9a; font-size: 14px; line-height: 1.5;">
                     💡 To change the server, please log out first.
                 </p>
+            </div>
+        `;
+    }
+    
+    /**
+     * Build version warning HTML based on compatibility check
+     * @returns {string} HTML string for version warning or empty string
+     */
+    buildVersionWarningHtml() {
+        if (!this.versionCompatibility) return '';
+        
+        const { compatible, warningType, backendVersion, extensionVersion, message } = this.versionCompatibility;
+        
+        // No warning needed if versions match perfectly
+        if (!warningType) return '';
+        
+        let backgroundColor, borderColor, titleColor, icon, title;
+        
+        if (!compatible) {
+            // Critical - red
+            backgroundColor = '#fef2f2';
+            borderColor = '#ef4444';
+            titleColor = '#dc2626';
+            icon = '🚫';
+            title = warningType === 'extension_outdated' ? 'Extension Update Required' : 'Backend Update Required';
+        } else {
+            // Warning - yellow (version mismatch)
+            backgroundColor = '#fef3c7';
+            borderColor = '#f59e0b';
+            titleColor = '#d97706';
+            icon = '⚠️';
+            title = 'Version Mismatch';
+        }
+        
+        // Build version info text
+        let versionText = '';
+        if (backendVersion && backendVersion !== 'unknown') {
+            versionText = `Backend: v${backendVersion}`;
+        }
+        if (extensionVersion) {
+            versionText += versionText ? ` • Extension: v${extensionVersion}` : `Extension: v${extensionVersion}`;
+        }
+        
+        return `
+            <div style="margin: 12px 0; padding: 12px; background: ${backgroundColor}; border: 1px solid ${borderColor}; border-radius: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span style="font-size: 16px;">${icon}</span>
+                    <strong style="color: ${titleColor}; font-size: 13px;">${title}</strong>
+                </div>
+                <div style="font-size: 12px; color: #78350f; padding-left: 24px;">${versionText}</div>
+                ${message ? `<div style="font-size: 11px; color: #78350f; padding-left: 24px; margin-top: 4px; opacity: 0.9;">${message}</div>` : ''}
             </div>
         `;
     }

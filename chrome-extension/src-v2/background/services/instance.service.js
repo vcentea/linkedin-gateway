@@ -8,12 +8,30 @@
  * @fileoverview Provides high-level instance management functions that coordinate
  * between instance ID, instance name, and browser info utilities. This service
  * is used by the background script to initialize and manage instance tracking.
+ * 
+ * NOTE: This module runs in service workers where DOM APIs like `document` are
+ * not available. All code and dependencies must be service worker compatible.
  */
 
 import { logger } from '../../shared/utils/logger.js';
 import { ensureInstanceId, getInstanceId } from '../../shared/utils/instance-id.js';
 import { ensureInstanceName, getInstanceName } from '../../shared/utils/instance-name.js';
 import { detectBrowserInfo, getCachedBrowserInfo } from '../../shared/utils/browser-info.js';
+
+/**
+ * Default fallback instance info returned when detection fails
+ */
+const FALLBACK_INSTANCE_INFO = {
+    instance_id: null,
+    instance_name: 'Browser Extension',
+    browser_info: {
+        browser: 'unknown',
+        browserVersion: 'unknown',
+        os: 'unknown',
+        platform: 'unknown',
+        detectedAt: new Date().toISOString()
+    }
+};
 
 /**
  * Gets complete instance information
@@ -30,37 +48,62 @@ export async function getInstanceInfo(forceRefresh = false) {
         logger.info('Getting instance information', context);
         
         // 1. Ensure instance ID exists (generate if needed)
-        const instanceId = await ensureInstanceId();
+        let instanceId;
+        try {
+            instanceId = await ensureInstanceId();
+        } catch (idError) {
+            logger.warn(`Failed to get instance ID: ${idError.message}`, context);
+            instanceId = 'fallback_' + Date.now();
+        }
         
         // 2. Ensure instance name exists (generate if needed)
-        const instanceName = await ensureInstanceName();
+        let instanceName;
+        try {
+            instanceName = await ensureInstanceName();
+        } catch (nameError) {
+            logger.warn(`Failed to get instance name: ${nameError.message}`, context);
+            instanceName = 'Browser Extension';
+        }
         
         // 3. Get browser info (fresh or cached)
         let browserInfo;
-        if (forceRefresh) {
-            logger.info('Forcing fresh browser info detection', context);
-            browserInfo = await detectBrowserInfo();
-            
-            // Cache the fresh info
-            chrome.storage.local.set({ browserInfo }, () => {
-                if (chrome.runtime.lastError) {
-                    logger.error('Failed to cache browser info', context, chrome.runtime.lastError);
-                }
-            });
-        } else {
-            browserInfo = await getCachedBrowserInfo();
-            
-            // If no cached info, detect and cache
-            if (!browserInfo) {
+        try {
+            if (forceRefresh) {
+                logger.info('Forcing fresh browser info detection', context);
                 browserInfo = await detectBrowserInfo();
-                chrome.storage.local.set({ browserInfo });
+                
+                // Cache the fresh info (non-blocking)
+                try {
+                    chrome.storage.local.set({ browserInfo }, () => {
+                        if (chrome.runtime.lastError) {
+                            logger.warn('Failed to cache browser info', context);
+                        }
+                    });
+                } catch (cacheError) {
+                    // Ignore cache errors
+                }
+            } else {
+                browserInfo = await getCachedBrowserInfo();
+                
+                // If no cached info, detect and cache
+                if (!browserInfo) {
+                    browserInfo = await detectBrowserInfo();
+                    try {
+                        chrome.storage.local.set({ browserInfo });
+                    } catch (cacheError) {
+                        // Ignore cache errors
+                    }
+                }
             }
+        } catch (browserError) {
+            logger.warn(`Failed to get browser info: ${browserError.message}`, context);
+            browserInfo = FALLBACK_INSTANCE_INFO.browser_info;
         }
         
         const instanceInfo = {
             instance_id: instanceId,
             instance_name: instanceName,
-            browser_info: browserInfo
+            browser_info: browserInfo || FALLBACK_INSTANCE_INFO.browser_info
         };
         
         logger.info(`Instance info retrieved: ID=${instanceId}, Name=${instanceName}`, context);
@@ -69,15 +112,12 @@ export async function getInstanceInfo(forceRefresh = false) {
     } catch (error) {
         logger.error('Failed to get instance info', context, error);
         
-        // Return minimal fallback info
+        // Return minimal fallback info with timestamp-based ID
         return {
+            ...FALLBACK_INSTANCE_INFO,
             instance_id: 'error_' + Date.now(),
-            instance_name: 'Unknown Instance',
             browser_info: {
-                browser: 'unknown',
-                browserVersion: 'unknown',
-                os: 'unknown',
-                platform: 'unknown',
+                ...FALLBACK_INSTANCE_INFO.browser_info,
                 detectedAt: new Date().toISOString()
             }
         };

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "LinkedIn Gateway",
   "short_name": "LinkedIn Gateway",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "A Chrome extension for connecting your LinkedIn profile with matching opportunities",
   "icons": {
     "16": "./assets/icons/icon16.png",
@@ -29,7 +29,7 @@
   "host_permissions": [
     "https://lgdev.ainnovate.tech/*",
     "https://www.linkedin.com/*"
-  ],
+    
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },

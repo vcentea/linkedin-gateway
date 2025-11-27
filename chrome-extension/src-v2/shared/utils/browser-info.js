@@ -7,16 +7,54 @@
  * 
  * @fileoverview Detects browser name, version, OS, and platform information
  * for creating unique instance identifiers and user-friendly display names.
+ * 
+ * NOTE: This module is used in service workers where DOM APIs like `document`
+ * are not available. All code must be service worker compatible.
  */
 
 import { logger } from './logger.js';
+
+/**
+ * Safely gets user agent string
+ * Service workers have navigator but it may not be immediately available
+ * @returns {string} User agent string or empty string if not available
+ */
+function safeGetUserAgent() {
+    try {
+        if (typeof navigator !== 'undefined' && navigator.userAgent) {
+            return navigator.userAgent;
+        }
+    } catch (e) {
+        // Silently fail - navigator might not be available
+    }
+    return '';
+}
+
+/**
+ * Safely gets platform string
+ * @returns {string} Platform string or empty string if not available
+ */
+function safeGetPlatform() {
+    try {
+        if (typeof navigator !== 'undefined' && navigator.platform) {
+            return navigator.platform;
+        }
+    } catch (e) {
+        // Silently fail
+    }
+    return '';
+}
 
 /**
  * Detects browser name from user agent
  * @returns {string} Browser name (chrome, edge, brave, opera, or unknown)
  */
 function detectBrowserName() {
-    const userAgent = navigator.userAgent.toLowerCase();
+    const userAgent = safeGetUserAgent().toLowerCase();
+    
+    if (!userAgent) {
+        return 'unknown';
+    }
     
     // Check for specific browsers (order matters - check most specific first)
     if (userAgent.includes('edg/')) {
@@ -39,9 +77,17 @@ function detectBrowserName() {
  * @returns {string} Browser version or 'unknown'
  */
 function detectBrowserVersion() {
-    const userAgent = navigator.userAgent;
-    
     try {
+        const userAgent = safeGetUserAgent();
+        
+        if (!userAgent) {
+            // Fallback: try to get from extension manifest
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) {
+                return chrome.runtime.getManifest().version;
+            }
+            return 'unknown';
+        }
+        
         // Try to extract version from user agent
         // Chrome/Edge format: "Chrome/120.0.6099.109" or "Edg/120.0.2210.91"
         const chromeMatch = userAgent.match(/Chrome\/(\d+\.\d+\.\d+\.\d+)/);
@@ -72,37 +118,45 @@ function detectBrowserVersion() {
  * @returns {string} OS name (windows, mac, linux, chromeos, android, ios, or unknown)
  */
 function detectOS() {
-    const userAgent = navigator.userAgent.toLowerCase();
-    const platform = navigator.platform.toLowerCase();
-    
-    // Check user agent for specific OS signatures
-    if (userAgent.includes('win')) {
-        return 'windows';
-    } else if (userAgent.includes('mac')) {
-        // Distinguish between macOS and iOS
-        if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
-            return 'ios';
+    try {
+        const userAgent = safeGetUserAgent().toLowerCase();
+        const platform = safeGetPlatform().toLowerCase();
+        
+        // Check user agent for specific OS signatures
+        if (userAgent) {
+            if (userAgent.includes('win')) {
+                return 'windows';
+            } else if (userAgent.includes('mac')) {
+                // Distinguish between macOS and iOS
+                if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+                    return 'ios';
+                }
+                return 'mac';
+            } else if (userAgent.includes('linux')) {
+                // Check if it's ChromeOS
+                if (userAgent.includes('cros')) {
+                    return 'chromeos';
+                }
+                return 'linux';
+            } else if (userAgent.includes('android')) {
+                return 'android';
+            } else if (userAgent.includes('cros')) {
+                return 'chromeos';
+            }
         }
-        return 'mac';
-    } else if (userAgent.includes('linux')) {
-        // Check if it's ChromeOS
-        if (userAgent.includes('cros')) {
-            return 'chromeos';
+        
+        // Fallback to platform detection
+        if (platform) {
+            if (platform.includes('win')) {
+                return 'windows';
+            } else if (platform.includes('mac')) {
+                return 'mac';
+            } else if (platform.includes('linux')) {
+                return 'linux';
+            }
         }
-        return 'linux';
-    } else if (userAgent.includes('android')) {
-        return 'android';
-    } else if (userAgent.includes('cros')) {
-        return 'chromeos';
-    }
-    
-    // Fallback to platform detection
-    if (platform.includes('win')) {
-        return 'windows';
-    } else if (platform.includes('mac')) {
-        return 'mac';
-    } else if (platform.includes('linux')) {
-        return 'linux';
+    } catch (error) {
+        logger.error('Failed to detect OS', 'browser-info', error);
     }
     
     return 'unknown';
@@ -115,7 +169,7 @@ function detectOS() {
 function detectPlatform() {
     try {
         // Modern browsers support navigator.userAgentData
-        if (navigator.userAgentData && navigator.userAgentData.platform) {
+        if (typeof navigator !== 'undefined' && navigator.userAgentData && navigator.userAgentData.platform) {
             const platform = navigator.userAgentData.platform.toLowerCase();
             
             if (platform.includes('arm')) {
@@ -126,13 +180,15 @@ function detectPlatform() {
         }
         
         // Fallback to navigator.platform
-        const platform = navigator.platform.toLowerCase();
-        if (platform.includes('arm')) {
-            return 'arm64';
-        } else if (platform.includes('win64') || platform.includes('x86_64') || platform.includes('x64')) {
-            return 'x86_64';
-        } else if (platform.includes('win32') || platform.includes('x86')) {
-            return 'x86';
+        const platform = safeGetPlatform().toLowerCase();
+        if (platform) {
+            if (platform.includes('arm')) {
+                return 'arm64';
+            } else if (platform.includes('win64') || platform.includes('x86_64') || platform.includes('x64')) {
+                return 'x86_64';
+            } else if (platform.includes('win32') || platform.includes('x86')) {
+                return 'x86';
+            }
         }
     } catch (error) {
         logger.error('Failed to detect platform', 'browser-info', error);

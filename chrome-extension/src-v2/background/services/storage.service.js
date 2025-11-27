@@ -100,9 +100,11 @@ export async function getAuthData() {
     
     // Get all server auth data
     const allServerAuth = await getLocalStorage('server_auth_data', {});
+    logger.info(`Got allServerAuth, keys: ${Object.keys(allServerAuth).join(', ') || 'none'}`, 'storage.service');
     
     // Get auth data for current server
     const serverAuth = allServerAuth[serverUrl] || {};
+    logger.info(`Got serverAuth for ${serverUrl}, hasToken: ${!!serverAuth.accessToken}`, 'storage.service');
     
     // Fallback: Check for legacy single-token storage (migrate if found)
     if (!serverAuth.accessToken) {
@@ -123,11 +125,13 @@ export async function getAuthData() {
       }
     }
     
-    return {
+    const result = {
       accessToken: serverAuth.accessToken || null,
       userId: serverAuth.userId || null,
       tokenExpiresAt: serverAuth.tokenExpiresAt || null
     };
+    logger.info(`Returning auth data: hasToken=${!!result.accessToken}, hasUserId=${!!result.userId}`, 'storage.service');
+    return result;
   } catch (error) {
     handleError(error, 'storage.service.getAuthData');
     logger.error(`Error getting auth data: ${error.message}`, 'storage.service');

@@ -153,6 +153,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
     description TEXT,
     csrf_token VARCHAR(255),
     linkedin_cookies JSONB DEFAULT '{}',
+    gemini_credentials JSONB DEFAULT '{}',  -- Gemini AI OAuth credentials (v1.2.0)
     last_used_at TIMESTAMP WITH TIME ZONE,
     is_active BOOLEAN DEFAULT TRUE,
     rate_limit_config JSONB DEFAULT '{}',

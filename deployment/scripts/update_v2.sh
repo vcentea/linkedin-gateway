@@ -65,6 +65,30 @@ echo -e "${BLUE}LinkedIn Gateway Update V2 - $EDITION_TITLE${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
+# For Enterprise edition, verify SSH access first
+if [ "$EDITION" = "enterprise" ]; then
+    echo -e "${YELLOW}[Pre] Verifying Enterprise repository access...${NC}"
+    
+    # Source the setup script to get the verification function
+    source "$SCRIPT_DIR/setup-enterprise-keys.sh" 2>/dev/null || true
+    
+    if ! verify_enterprise_ssh_access 2>/dev/null; then
+        echo -e "${RED}======================================${NC}"
+        echo -e "${RED}Enterprise SSH Access Required${NC}"
+        echo -e "${RED}======================================${NC}"
+        echo ""
+        echo "To update the Enterprise edition, you need SSH access to the private repository."
+        echo ""
+        echo "Please run first:"
+        echo "  ./scripts/setup-enterprise-keys.sh"
+        echo ""
+        echo "Then add the generated SSH key to your GitHub account and request repository access."
+        echo ""
+        exit 1
+    fi
+    echo ""
+fi
+
 # [0/6] Prerequisites
 echo -e "${YELLOW}[0/6] Checking prerequisites...${NC}"
 docker info > /dev/null 2>&1 || { echo -e "${RED}Error: Docker not running${NC}"; exit 1; }

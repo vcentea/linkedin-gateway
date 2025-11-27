@@ -1095,7 +1095,7 @@ function clearPreviousVersionWarning() {
 
 /**
  * Check backend version compatibility (Phase 3.3)
- * Shows a warning banner if backend version is incompatible
+ * Shows a warning banner if backend version is incompatible or mismatched
  */
 async function checkBackendVersion() {
     const context = 'login/index.checkBackendVersion';
@@ -1106,11 +1106,14 @@ async function checkBackendVersion() {
         // Check compatibility without authentication
         const compatibility = await checkBackendCompatibility();
         
-        if (!compatibility.compatible) {
-            logger.warn(`Backend incompatible: ${compatibility.message}`, context);
-            showBackendUpdateWarning(compatibility.backendVersion);
+        // Show warning if incompatible OR if there's a version mismatch
+        if (!compatibility.compatible || compatibility.warningType) {
+            logger.warn(`Version issue: ${compatibility.message || 'Version mismatch detected'}`, context);
+            showVersionWarning(compatibility);
         } else {
             logger.info(`Backend compatible: v${compatibility.backendVersion}`, context);
+            // Clear any previous warning
+            clearPreviousVersionWarning();
         }
         
     } catch (error) {
@@ -1120,12 +1123,17 @@ async function checkBackendVersion() {
 }
 
 /**
- * Show backend update warning banner (Phase 3.3)
- * @param {string} backendVersion - Backend version detected
+ * Show version warning banner (Phase 3.3)
+ * @param {Object} compatibility - Compatibility check result
+ * @param {string} compatibility.backendVersion - Backend version detected
+ * @param {string} compatibility.extensionVersion - Extension version
+ * @param {string} compatibility.message - Warning message
+ * @param {string} compatibility.warningType - Type of warning (backend_outdated, extension_outdated, version_mismatch)
+ * @param {boolean} compatibility.compatible - Whether versions are compatible
  */
-function showBackendUpdateWarning(backendVersion) {
-    const context = 'login/index.showBackendUpdateWarning';
-    logger.info('Displaying backend update warning on login page', context);
+function showVersionWarning(compatibility) {
+    const context = 'login/index.showVersionWarning';
+    logger.info('Displaying version warning on login page', context);
     
     try {
         // Find the main container (login container)
@@ -1138,41 +1146,70 @@ function showBackendUpdateWarning(backendVersion) {
         // Clear any existing warning
         clearPreviousVersionWarning();
         
-        // Build version message
-        const MIN_VERSION = "1.1.0";
-        let versionText = `Required: v${MIN_VERSION}`;
-        if (backendVersion && backendVersion !== "unknown") {
-            versionText += ` • Current: ${backendVersion}`;
+        const { backendVersion, extensionVersion, message, warningType, compatible } = compatibility;
+        
+        // Determine warning style based on type
+        let backgroundColor, borderColor, titleColor, textColor, icon, title;
+        
+        if (!compatible) {
+            // Critical - incompatible versions
+            backgroundColor = '#fef2f2';
+            borderColor = '#ef4444';
+            titleColor = '#991b1b';
+            textColor = '#7f1d1d';
+            icon = '🚫';
+            
+            if (warningType === 'extension_outdated') {
+                title = 'Extension Update Required';
+            } else {
+                title = 'Backend Update Required';
+            }
         } else {
-            versionText += ` • Current: Unknown`;
+            // Warning - version mismatch but compatible
+            backgroundColor = '#fef3c7';
+            borderColor = '#f59e0b';
+            titleColor = '#92400e';
+            textColor = '#78350f';
+            icon = '⚠️';
+            title = 'Version Mismatch';
+        }
+        
+        // Build version info text
+        let versionText = '';
+        if (backendVersion && backendVersion !== 'unknown') {
+            versionText = `Backend: v${backendVersion}`;
+        }
+        if (extensionVersion) {
+            versionText += versionText ? ` • Extension: v${extensionVersion}` : `Extension: v${extensionVersion}`;
         }
         
         // Create warning banner
         const warningBanner = document.createElement('div');
         warningBanner.id = 'backend-version-warning';
         warningBanner.style.cssText = `
-            background: #fef3c7;
-            border: 1px solid #f59e0b;
+            background: ${backgroundColor};
+            border: 1px solid ${borderColor};
             border-radius: 6px;
             padding: 10px 12px;
             margin-bottom: 16px;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 8px;
         `;
         
         warningBanner.innerHTML = `
-            <span style="font-size: 18px; flex-shrink: 0;">⚠️</span>
+            <span style="font-size: 18px; flex-shrink: 0;">${icon}</span>
             <div style="flex: 1;">
-                <strong style="color: #92400e; font-size: 13px;">Backend Update Required</strong>
-                <span style="color: #78350f; font-size: 12px; margin-left: 8px;">${versionText}</span>
+                <strong style="color: ${titleColor}; font-size: 13px;">${title}</strong>
+                <div style="color: ${textColor}; font-size: 12px; margin-top: 2px;">${versionText}</div>
+                ${message ? `<div style="color: ${textColor}; font-size: 11px; margin-top: 4px; opacity: 0.9;">${message}</div>` : ''}
             </div>
         `;
         
         // Insert at the beginning of login container
         loginContainer.insertBefore(warningBanner, loginContainer.firstChild);
         
-        logger.info('Backend update warning displayed on login page', context);
+        logger.info(`Version warning displayed: ${warningType}`, context);
         
     } catch (error) {
         logger.error(`Failed to display warning banner: ${error.message}`, context);

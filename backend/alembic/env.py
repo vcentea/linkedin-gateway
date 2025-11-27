@@ -1,10 +1,16 @@
 import os
 from logging.config import fileConfig
+from pathlib import Path
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+
+# Load .env file for local development
+from dotenv import load_dotenv
+backend_dir = Path(__file__).resolve().parent.parent
+load_dotenv(backend_dir / ".env")
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -18,10 +24,9 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 import sys
-from pathlib import Path
 
 # Add app directory to path so we can import models
-backend_dir = Path(__file__).resolve().parent.parent
+# backend_dir already defined at top for .env loading
 sys.path.insert(0, str(backend_dir))
 
 # Add alembic directory to path so migrations can import migration_helpers

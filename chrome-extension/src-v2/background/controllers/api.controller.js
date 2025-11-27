@@ -91,7 +91,7 @@ async function handleApiRequest(data, sendResponse) {
     }
     
     // Make the API request (pass undefined if no token)
-    const response = await makeApiRequest(data.endpoint, data.method, data.params, data.body, accessToken);
+    const response = await makeApiRequest(data.endpoint, data.method, data.params, data.body, accessToken, data.headers);
     
     // Send the success response back
     sendResponse({ 
@@ -117,9 +117,10 @@ async function handleApiRequest(data, sendResponse) {
  * @param {Object} [params] - The query parameters
  * @param {Object} [body] - The request body (for POST, PUT methods)
  * @param {string} [accessToken] - The access token for authentication (optional)
+ * @param {Object} [customHeaders] - Custom headers to include in the request (optional)
  * @returns {Promise<any>} The API response data
  */
-async function makeApiRequest(endpoint, method, params, body, accessToken) {
+async function makeApiRequest(endpoint, method, params, body, accessToken, customHeaders) {
   const context = 'api.controller.makeApiRequest';
   logger.info(`[API] Making API request: ${method} ${endpoint}`, context);
   
@@ -152,6 +153,12 @@ async function makeApiRequest(endpoint, method, params, body, accessToken) {
       method: method,
       headers: { ...apiConfig.HEADERS }, // Use default headers from config
     };
+    
+    // Merge custom headers if provided (e.g., x-goog-api-key for Gemini)
+    if (customHeaders && typeof customHeaders === 'object') {
+      Object.assign(options.headers, customHeaders);
+      logger.info(`[API] Custom headers merged: ${Object.keys(customHeaders).join(', ')}`, context);
+    }
     
     // Add authentication header if token provided
     if (accessToken) {

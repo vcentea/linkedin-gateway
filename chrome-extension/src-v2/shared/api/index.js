@@ -314,6 +314,59 @@ export async function updateLinkedInCookies(accessToken, linkedinCookies) {
 }
 
 /**
+ * Update Gemini credentials for the user's API key (v1.2.0)
+ * 
+ * @param {string} accessToken - The user's access token for authentication
+ * @param {Object} geminiCredentials - Gemini OAuth credentials object
+ * @returns {Promise<{success: boolean, error?: string}>} Object indicating if update was successful
+ */
+export async function updateGeminiCredentials(accessToken, geminiCredentials) {
+    const logContext = 'api/index.js:updateGeminiCredentials';
+    logger.info('Updating Gemini credentials via backend', logContext);
+    
+    if (!accessToken) {
+        logger.error('Attempted to update Gemini credentials without access token', logContext);
+        return { success: false, error: 'No access token' };
+    }
+    
+    if (!geminiCredentials || typeof geminiCredentials !== 'object') {
+        logger.error('Attempted to update Gemini credentials with invalid data', logContext);
+        return { success: false, error: 'Invalid Gemini credentials data' };
+    }
+    
+    // ALWAYS get current server URL dynamically
+    const { apiUrl } = await appConfig.getServerUrls();
+    
+    try {
+        const response = await fetch(`${apiUrl}${API_KEY_ENDPOINT}/gemini-credentials`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ gemini_credentials: geminiCredentials })
+        });
+
+        if (response.status === 404) {
+            logger.warn('API returned 404 - No active API key found to update', logContext);
+            return { success: false, error: 'No active API key found' };
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logger.error(`API error: ${response.status} ${response.statusText}. Body: ${errorText}`, logContext);
+            return { success: false, error: `API error: ${response.status} ${response.statusText}` };
+        }
+
+        logger.info('Gemini credentials updated successfully', logContext);
+        return { success: true };
+    } catch (error) {
+        handleError(error, logContext);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
  * Delete API Key
  * 
  * @param {string} accessToken - The user's access token for authentication

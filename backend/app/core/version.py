@@ -3,8 +3,8 @@ Version management for LinkedIn Gateway API
 """
 
 # API Version
-API_VERSION = "1.1.0"
-MIN_EXTENSION_VERSION = "1.0.0"  # Minimum compatible extension version
+API_VERSION = "1.8.0"
+MIN_EXTENSION_VERSION = "1.5.0"  # Minimum compatible extension version
 
 # Feature flags
 FEATURES = {

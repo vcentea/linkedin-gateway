@@ -31,6 +31,9 @@ echo ""
 if docker ps | grep -q "linkedin-gateway-saas-db"; then
     DB_CONTAINER="linkedin-gateway-saas-db"
     echo "Edition: SaaS"
+elif docker ps | grep -q "linkedin-gateway-enterprise-db"; then
+    DB_CONTAINER="linkedin-gateway-enterprise-db"
+    echo "Edition: Enterprise"
 elif docker ps | grep -q "linkedin-gateway-core-db"; then
     DB_CONTAINER="linkedin-gateway-core-db"
     echo "Edition: Core"

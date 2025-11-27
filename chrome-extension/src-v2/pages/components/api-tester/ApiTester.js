@@ -250,22 +250,35 @@ export class ApiTester {
         
         logger.info(`[API_TESTER] Endpoint changed to: ${endpoint.name}`, 'ApiTester.handleEndpointChange');
         logger.info(`[API_TESTER] Endpoint has ${endpoint.params?.length || 0} parameters:`, 'ApiTester.handleEndpointChange', endpoint.params);
+        logger.info(`[API_TESTER] Endpoint rawBody mode: ${!!endpoint.rawBody}`, 'ApiTester.handleEndpointChange');
         
         // Build parameter inputs based on the selected endpoint
+        // Pass the full endpoint config for rawBody endpoints
         if (this.parameterForm) {
-            this.parameterForm.buildParameterInputs(endpoint.params || []);
+            this.parameterForm.buildParameterInputs(endpoint.params || [], endpoint);
         }
         
         // Handle server_call toggle for all endpoints
         const serverCallToggle = document.getElementById('server-call-toggle');
         const serverCallLabel = /** @type {HTMLElement|null} */ (document.querySelector('label[for="server-call-toggle"]'));
+        const serverCallContainer = serverCallToggle?.closest('.form-group');
         
         if (serverCallToggle instanceof HTMLInputElement) {
             // Check if using default server (set in configureServerCallRestrictions)
             const isDefaultServer = this.isDefaultServer !== undefined ? this.isDefaultServer : true;
             
-            if (isDefaultServer) {
-                // Default server: always disabled
+            // For Gemini endpoints, hide the server_call toggle entirely (always server-side)
+            if (endpoint.geminiAuth) {
+                serverCallToggle.checked = false; // Not used, but set to false
+                serverCallToggle.disabled = true;
+                if (serverCallContainer) {
+                    serverCallContainer.style.display = 'none';
+                }
+            } else if (isDefaultServer) {
+                // Default server: always disabled for LinkedIn endpoints
+                if (serverCallContainer) {
+                    serverCallContainer.style.display = '';
+                }
                 serverCallToggle.checked = false;
                 serverCallToggle.disabled = true;
                 if (serverCallLabel) {
@@ -274,6 +287,9 @@ export class ApiTester {
                 }
             } else if (endpoint.serverOnly) {
                 // Custom server with server-only endpoint: checked and disabled
+                if (serverCallContainer) {
+                    serverCallContainer.style.display = '';
+                }
                 serverCallToggle.checked = true;
                 serverCallToggle.disabled = true;
                 if (serverCallLabel) {
@@ -282,6 +298,9 @@ export class ApiTester {
                 }
             } else {
                 // Custom server with dual-mode endpoint: enabled
+                if (serverCallContainer) {
+                    serverCallContainer.style.display = '';
+                }
                 serverCallToggle.disabled = false;
                 serverCallToggle.checked = false; // Default to proxy mode
                 if (serverCallLabel) {
@@ -396,7 +415,42 @@ export class ApiTester {
             const schemaEndpoints = this.buildEndpointsFromSchema(schema, linkedinPaths);
             logger.info(`[API_SCHEMA] Built ${schemaEndpoints.length} endpoint definitions from schema`, context);
             
-            // Replace the manually loaded endpoints with schema-generated ones
+            // Load endpoints.json to get special properties and custom endpoints
+            const { overrides: endpointsJsonOverrides, allEndpoints: jsonEndpoints } = await this.loadEndpointsJsonOverrides();
+            
+            // Merge special properties from endpoints.json into schema-generated endpoints
+            schemaEndpoints.forEach(endpoint => {
+                const override = endpointsJsonOverrides.get(endpoint.endpoint + ':' + endpoint.method);
+                if (override) {
+                    if (override.rawBody !== undefined) {
+                        endpoint.rawBody = override.rawBody;
+                    }
+                    if (override.rawBodyExample !== undefined) {
+                        endpoint.rawBodyExample = override.rawBodyExample;
+                    }
+                    if (override.description !== undefined) {
+                        endpoint.description = override.description;
+                    }
+                    // Use params from endpoints.json if provided (for path params, custom params, etc.)
+                    if (override.params && override.params.length > 0) {
+                        endpoint.params = override.params;
+                    }
+                    logger.info(`[API_SCHEMA] Applied overrides for ${endpoint.endpoint}: rawBody=${endpoint.rawBody}, params=${endpoint.params?.length}`, context);
+                }
+            });
+            
+            // Add endpoints from endpoints.json that don't exist in schema (custom endpoints)
+            const schemaEndpointKeys = new Set(schemaEndpoints.map(ep => ep.endpoint + ':' + ep.method));
+            jsonEndpoints.forEach(jsonEp => {
+                const key = jsonEp.endpoint + ':' + jsonEp.method;
+                if (!schemaEndpointKeys.has(key)) {
+                    // This endpoint is only in endpoints.json, add it directly
+                    schemaEndpoints.push(jsonEp);
+                    logger.info(`[API_SCHEMA] Added custom endpoint from endpoints.json: ${jsonEp.name}`, context);
+                }
+            });
+            
+            // Replace the manually loaded endpoints with merged ones
             this.endpoints = schemaEndpoints;
             
             // Log each endpoint with parameters
@@ -412,6 +466,52 @@ export class ApiTester {
             logger.error(`[API_SCHEMA] Failed to fetch API schema: ${error.message}`, context);
             // Don't throw - we don't want to break initialization if schema fetch fails
         }
+    }
+    
+    /**
+     * Loads endpoints.json and returns both overrides map and full endpoint list
+     * @returns {Promise<{overrides: Map<string, Object>, allEndpoints: Array<Object>}>}
+     */
+    async loadEndpointsJsonOverrides() {
+        const overrides = new Map();
+        const allEndpoints = [];
+        
+        try {
+            const apiEndpointsUrl = chrome.runtime.getURL('/shared/api/endpoints.json');
+            const response = await fetch(apiEndpointsUrl);
+            
+            if (!response.ok) {
+                logger.warn(`[API_SCHEMA] Could not load endpoints.json for overrides: ${response.status}`, 'loadEndpointsJsonOverrides');
+                return { overrides, allEndpoints };
+            }
+            
+            const endpointsJson = await response.json();
+            
+            // Build a map keyed by endpoint pattern + method AND collect all endpoints
+            endpointsJson.forEach(ep => {
+                const key = ep.endpoint + ':' + ep.method;
+                
+                // Store override properties for merging with schema endpoints
+                overrides.set(key, {
+                    rawBody: ep.rawBody,
+                    rawBodyExample: ep.rawBodyExample,
+                    params: ep.params,
+                    description: ep.description,
+                    geminiAuth: ep.geminiAuth,
+                    serverOnly: ep.serverOnly
+                });
+                
+                // Also store the full endpoint for adding custom endpoints not in schema
+                allEndpoints.push(ep);
+                
+                logger.info(`[API_SCHEMA] Registered endpoint from JSON: ${key}`, 'loadEndpointsJsonOverrides');
+            });
+            
+            logger.info(`[API_SCHEMA] Loaded ${overrides.size} endpoints from endpoints.json`, 'loadEndpointsJsonOverrides');
+        } catch (error) {
+            logger.warn(`[API_SCHEMA] Failed to load endpoints.json overrides: ${error.message}`, 'loadEndpointsJsonOverrides');
+        }
+        return { overrides, allEndpoints };
     }
     
     /**
@@ -452,7 +552,8 @@ export class ApiTester {
                         description: operation.description || operation.summary || '',
                         params: params,
                         expectedResponse: this.getExpectedResponse(operation),
-                        serverOnly: this.isServerOnly(operation)
+                        serverOnly: this.isServerOnly(operation),
+                        geminiAuth: this.isGeminiAuth(operation)
                     };
                     
                     endpoints.push(endpoint);
@@ -684,6 +785,11 @@ export class ApiTester {
         const text = (operation.description || '') + (operation.summary || '');
         const lowerText = text.toLowerCase();
         
+        // [Gemini] endpoints are always server-only
+        if (text.includes('[Gemini]') || text.includes('[gemini]')) {
+            return true;
+        }
+        
         // If it mentions "supports two execution modes" or "proxy", it's NOT server-only
         if (lowerText.includes('supports two execution modes') || 
             lowerText.includes('transparent http proxy') ||
@@ -694,7 +800,18 @@ export class ApiTester {
         // Only return true if it explicitly says "server-only" or "server only"
         return lowerText.includes('server-only') || 
                lowerText.includes('server only') ||
-               (lowerText.includes('server-side') && lowerText.includes('only'));
+               (lowerText.includes('server-side') && lowerText.includes('only')) ||
+               lowerText.includes('runs entirely on the server');
+    }
+    
+    /**
+     * Determines if endpoint uses Gemini authentication from operation
+     * @param {Object} operation - The OpenAPI operation object
+     * @returns {boolean} True if Gemini auth endpoint
+     */
+    isGeminiAuth(operation) {
+        const text = (operation.description || '') + (operation.summary || '');
+        return text.includes('[Gemini]') || text.includes('[gemini]');
     }
     
     /**
@@ -767,7 +884,21 @@ export class ApiTester {
             }
         }
         
-        // Validate required parameters
+        // For rawBody endpoints, validate the JSON body
+        if (this.currentEndpoint.rawBody) {
+            if (this.parameterForm) {
+                const paramValues = this.parameterForm.getParameterValues();
+                if (!paramValues._rawBody) {
+                    return 'Request body is required. Please enter valid JSON.';
+                }
+                if (typeof paramValues._rawBody === 'string') {
+                    return 'Invalid JSON in request body. Please check the syntax.';
+                }
+            }
+            return null; // Validation passed for rawBody endpoint
+        }
+        
+        // Validate required parameters (non-rawBody endpoints)
         if (this.parameterForm) {
             const isValid = this.parameterForm.validateParameters();
             if (!isValid) {
@@ -820,6 +951,50 @@ export class ApiTester {
             method: this.currentEndpoint.method
         };
         
+        const isGeminiEndpoint = !!this.currentEndpoint.geminiAuth;
+        const isRawBodyEndpoint = !!this.currentEndpoint.rawBody;
+        
+        // Handle rawBody endpoints (pass-through like native Gemini API)
+        if (isRawBodyEndpoint && paramValues._rawBody) {
+            // First, replace any path parameters in the endpoint URL
+            const pathParamMatches = endpoint.match(/\{([^}]+)\}/g);
+            if (pathParamMatches) {
+                pathParamMatches.forEach(match => {
+                    const paramName = match.slice(1, -1); // Remove { and }
+                    if (paramValues[paramName] !== undefined) {
+                        // Replace in endpoint URL
+                        endpoint = endpoint.replace(match, encodeURIComponent(paramValues[paramName]));
+                    }
+                });
+            }
+            
+            requestData.endpoint = endpoint;
+            // Use the raw body directly - don't add api_key to body for these endpoints
+            requestData.body = paramValues._rawBody;
+            
+            // Add API key to headers only
+            if (isGeminiEndpoint) {
+                requestData.headers = {
+                    'x-goog-api-key': apiKey || ''
+                };
+            } else {
+                requestData.headers = {
+                    'X-API-Key': apiKey || ''
+                };
+            }
+            
+            // Send API request using backend controller
+            const response = await this.makeApiRequest(requestData);
+            
+            // Display the response
+            if (this.responseDisplay) {
+                this.responseDisplay.displayResponse(response);
+            }
+            
+            return response;
+        }
+        
+        // Standard parameter handling (non-rawBody endpoints)
         // Separate path parameters from body/query parameters
         const pathParams = {};
         const bodyOrQueryParams = {};
@@ -852,6 +1027,7 @@ export class ApiTester {
         
         // Determine whether to use params or body based on HTTP method
         const method = this.currentEndpoint.method.toUpperCase();
+        
         if (method === 'GET' || method === 'DELETE') {
             // For GET/DELETE, use query parameters
             requestData.params = bodyOrQueryParams;
@@ -859,8 +1035,8 @@ export class ApiTester {
             if (apiKey) {
                 requestData.params.api_key = apiKey;
             }
-            // Add server_call to params if true
-            if (serverCall) {
+            // Add server_call to params if true (not for Gemini endpoints)
+            if (serverCall && !isGeminiEndpoint) {
                 requestData.params.server_call = serverCall;
             }
         } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
@@ -870,16 +1046,22 @@ export class ApiTester {
             if (apiKey) {
                 requestData.body.api_key = apiKey;
             }
-            // Add server_call to body if true
-            if (serverCall) {
+            // Add server_call to body if true (not for Gemini endpoints - they're always server-side)
+            if (serverCall && !isGeminiEndpoint) {
                 requestData.body.server_call = serverCall;
             }
         }
         
-        // Add API key to headers for all requests
-        requestData.headers = {
-            'X-API-Key': apiKey || ''
-        };
+        // Add API key to headers - use x-goog-api-key for Gemini endpoints
+        if (isGeminiEndpoint) {
+            requestData.headers = {
+                'x-goog-api-key': apiKey || ''
+            };
+        } else {
+            requestData.headers = {
+                'X-API-Key': apiKey || ''
+            };
+        }
         
         // Send API request using backend controller
         const response = await this.makeApiRequest(requestData);
@@ -1028,8 +1210,8 @@ export class ApiTester {
         const serverCallToggle = document.getElementById('server-call-toggle');
         const serverCall = serverCallToggle instanceof HTMLInputElement ? serverCallToggle.checked : false;
         
-        // Add server_call to preview if enabled
-        if (serverCall) {
+        // Add server_call to preview if enabled (not for Gemini endpoints)
+        if (serverCall && !this.currentEndpoint.geminiAuth) {
             params.server_call = serverCall;
         }
         
@@ -1038,7 +1220,8 @@ export class ApiTester {
             window.updateRequestDisplay(
                 this.currentEndpoint.endpoint,
                 this.currentEndpoint.method,
-                params
+                params,
+                !!this.currentEndpoint.geminiAuth  // Pass Gemini flag for correct header display
             );
         }
     }

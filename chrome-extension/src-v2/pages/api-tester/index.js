@@ -44,7 +44,7 @@ let apiTester = null;
  * @param {string} method - The HTTP method
  * @param {any} params - Request parameters
  */
-customWindow.updateRequestDisplay = async function(endpoint, method, params) {
+customWindow.updateRequestDisplay = async function(endpoint, method, params, isGeminiEndpoint = false) {
     const requestDisplay = document.getElementById('api-request-display');
     
     if (requestDisplay) {
@@ -52,28 +52,119 @@ customWindow.updateRequestDisplay = async function(endpoint, method, params) {
             // ALWAYS get current server URL dynamically
             const serverUrls = await appConfig.getServerUrls();
             const baseUrl = serverUrls.apiUrl || '[API_URL not defined]';
-            const paramsJson = JSON.stringify(params, null, 2);
+            
+            // Replace path parameters in endpoint URL
+            let resolvedEndpoint = endpoint;
+            const pathParamMatches = endpoint.match(/\{([^}]+)\}/g);
+            const bodyParams = { ...params };
+            
+            if (pathParamMatches) {
+                pathParamMatches.forEach(match => {
+                    const paramName = match.slice(1, -1); // Remove { and }
+                    if (params[paramName] !== undefined) {
+                        resolvedEndpoint = resolvedEndpoint.replace(match, encodeURIComponent(params[paramName]));
+                        // Remove path params from body display (except _rawBody)
+                        if (paramName !== '_rawBody') {
+                            delete bodyParams[paramName];
+                        }
+                    }
+                });
+            }
+            
+            // For display, show _rawBody content as the body if present
+            const displayParams = bodyParams._rawBody || bodyParams;
+            const paramsJson = JSON.stringify(displayParams, null, 2);
             
             // Get API key from input
             const apiKeyInput = document.getElementById('api-key-input');
             const apiKey = apiKeyInput instanceof HTMLInputElement ? apiKeyInput.value : '';
             
-            // Build headers object
+            // Build headers object - use x-goog-api-key for Gemini endpoints
             const headers = {
-                'Content-Type': 'application/json',
-                'X-API-Key': apiKey || 'your_api_key_here'
+                'Content-Type': 'application/json'
             };
+            
+            // Determine header name based on endpoint type
+            const apiKeyHeaderName = isGeminiEndpoint ? 'x-goog-api-key' : 'X-API-Key';
+            headers[apiKeyHeaderName] = apiKey || 'your_api_key_here';
+            
             const headersJson = JSON.stringify(headers, null, 2);
+            
+            // Store current request info for cURL generation
+            customWindow._currentRequest = {
+                method,
+                url: `${baseUrl}${resolvedEndpoint}`,
+                headers,
+                body: displayParams,
+                apiKeyHeaderName
+            };
             
             requestDisplay.innerHTML = `
                 <strong>Method:</strong> ${method}<br>
-                <strong>Endpoint:</strong> ${baseUrl}${endpoint}<br>
+                <strong>Endpoint:</strong> ${baseUrl}${resolvedEndpoint}<br>
                 <strong>Headers:</strong><pre style="margin: 0.25rem 0 0 0;">${headersJson}</pre>
                 <strong>Body/Parameters:</strong><pre style="margin: 0.25rem 0 0 0;">${paramsJson}</pre>
             `;
         } catch (error) {
             requestDisplay.innerHTML = `<span class="error-message"><strong>Error:</strong> ${error.message}</span>`;
         }
+    }
+};
+
+/**
+ * Generate cURL command from current request
+ * @returns {string} cURL command
+ */
+customWindow.generateCurlCommand = function() {
+    const req = customWindow._currentRequest;
+    if (!req) return '';
+    
+    let curl = `curl -X ${req.method} "${req.url}"`;
+    
+    // Add headers
+    for (const [key, value] of Object.entries(req.headers)) {
+        curl += ` \\\n  -H "${key}: ${value}"`;
+    }
+    
+    // Add body for POST/PUT/PATCH
+    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body && Object.keys(req.body).length > 0) {
+        const bodyJson = JSON.stringify(req.body);
+        curl += ` \\\n  -d '${bodyJson}'`;
+    }
+    
+    return curl;
+};
+
+/**
+ * Copy cURL command to clipboard
+ */
+customWindow.copyCurlToClipboard = async function() {
+    const curl = customWindow.generateCurlCommand();
+    if (!curl) {
+        logger.warn('No request to copy', 'copyCurlToClipboard');
+        return;
+    }
+    
+    try {
+        await navigator.clipboard.writeText(curl);
+        
+        // Show feedback
+        const copyBtn = document.getElementById('copy-curl-btn');
+        if (copyBtn) {
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '✓ Copied!';
+            copyBtn.style.backgroundColor = '#388e3c';
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.backgroundColor = '';
+            }, 2000);
+        }
+        
+        logger.info('cURL command copied to clipboard', 'copyCurlToClipboard');
+    } catch (error) {
+        logger.error(`Failed to copy: ${error.message}`, 'copyCurlToClipboard');
+        // Fallback: show the cURL in an alert
+        alert('cURL command:\n\n' + curl);
     }
 };
 
@@ -131,8 +222,24 @@ function createDisplayElements() {
     const requestSection = document.createElement('div');
     requestSection.className = 'request-section';
     requestSection.style.marginBottom = '1.5rem';
+    requestSection.style.marginTop = '1.5rem';
     requestSection.innerHTML = `
-        <h3 style="margin-top: 0; margin-bottom: 0.5rem;">API Request Preview</h3>
+        <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 0.5rem; gap: 15px;">
+            <h3 style="margin: 0;">API Request Preview</h3>
+            <button type="button" id="copy-curl-btn" style="
+                background-color: #6c757d;
+                color: white;
+                border: none;
+                padding: 0.4rem 0.8rem;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.85rem;
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+                transition: background-color 0.2s;
+            ">📋 Copy cURL</button>
+        </div>
         <div id="api-request-display" class="code-display">
             <em style="color: #666;">Select an endpoint and fill in parameters to see the request preview...</em>
         </div>
@@ -140,6 +247,25 @@ function createDisplayElements() {
     
     // Insert request display before the actions div
     apiForm.insertBefore(requestSection, actionsDiv);
+    
+    // Add click handler for copy cURL button
+    const copyCurlBtn = document.getElementById('copy-curl-btn');
+    if (copyCurlBtn) {
+        copyCurlBtn.addEventListener('click', () => {
+            if (customWindow.copyCurlToClipboard) {
+                customWindow.copyCurlToClipboard();
+            }
+        });
+        // Hover effect
+        copyCurlBtn.addEventListener('mouseenter', () => {
+            copyCurlBtn.style.backgroundColor = '#5a6268';
+        });
+        copyCurlBtn.addEventListener('mouseleave', () => {
+            if (!copyCurlBtn.textContent.includes('Copied')) {
+                copyCurlBtn.style.backgroundColor = '#6c757d';
+            }
+        });
+    }
     
     // Create response display section after the form
     const container = document.getElementById('api-tester-container');

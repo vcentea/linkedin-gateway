@@ -112,6 +112,18 @@ async def create_api_key(
     Returns:
         Created or updated APIKey object
     """
+    # Check for existing Gemini credentials to copy from other keys
+    existing_gemini_creds = {}
+    # We use a safe lookup here to avoid blocking key creation
+    try:
+        all_active_keys = await get_all_api_keys_for_user(db, user_id)
+        for key in all_active_keys:
+            if key.gemini_credentials:
+                existing_gemini_creds = key.gemini_credentials
+                break
+    except Exception:
+        pass
+
     if instance_id:
         # Multi-key mode: Check if key exists for this instance
         existing_key = await get_api_key_by_instance(db, user_id, instance_id)
@@ -126,6 +138,11 @@ async def create_api_key(
             existing_key.instance_name = instance_name
             existing_key.browser_info = browser_info or {}
             existing_key.is_active = True
+            
+            # Copy Gemini credentials if existing key doesn't have them but user has them elsewhere
+            if not existing_key.gemini_credentials and existing_gemini_creds:
+                existing_key.gemini_credentials = existing_gemini_creds
+            
             db.add(existing_key)
             await db.flush()
             await db.refresh(existing_key)
@@ -142,6 +159,7 @@ async def create_api_key(
             instance_id=instance_id,
             instance_name=instance_name,
             browser_info=browser_info or {},
+            gemini_credentials=existing_gemini_creds,
             is_active=True
         )
     else:
@@ -159,6 +177,7 @@ async def create_api_key(
             name=name,
             csrf_token=csrf_token,
             linkedin_cookies=linkedin_cookies or {},
+            gemini_credentials=existing_gemini_creds,
             is_active=True
         )
     
@@ -221,6 +240,54 @@ async def get_linkedin_cookies_for_user(db: AsyncSession, user_id: UUID) -> Opti
     """
     primary_key = await get_primary_api_key_by_user(db=db, user_id=user_id)
     return primary_key.linkedin_cookies if primary_key and primary_key.linkedin_cookies else None
+
+
+# ============================================================================
+# Gemini credentials management (v1.2.0)
+# ============================================================================
+
+async def update_gemini_credentials(db: AsyncSession, user_id: UUID, gemini_credentials: dict) -> Optional[APIKey]:
+    """
+    Updates Gemini OAuth credentials for ALL of the user's active API keys.
+    
+    The credentials should contain Google OAuth 2.0 fields:
+    - client_id: Google OAuth client ID
+    - client_secret: Google OAuth client secret
+    - token: Current access token
+    - refresh_token: Refresh token for obtaining new access tokens
+    - scopes: List of OAuth scopes
+    - token_uri: Token exchange endpoint
+    - expiry: Token expiry timestamp (ISO format)
+    - project_id: Optional Google Cloud project ID
+    
+    Returns the primary (most recently used) key if any keys were updated.
+    """
+    # Get all active keys for the user
+    active_keys = await get_all_api_keys_for_user(db, user_id)
+    
+    if not active_keys:
+        return None
+        
+    for key in active_keys:
+        key.gemini_credentials = gemini_credentials
+        db.add(key)
+        
+    await db.flush()
+    
+    # Return the primary key (first in list)
+    primary_key = active_keys[0]
+    await db.refresh(primary_key)
+    return primary_key
+
+
+async def get_gemini_credentials_for_user(db: AsyncSession, user_id: UUID) -> Optional[dict]:
+    """
+    Retrieve Gemini credentials for a user's primary (most recently used) API key.
+    
+    BACKWARD COMPATIBILITY: Uses primary key for legacy behavior.
+    """
+    primary_key = await get_primary_api_key_by_user(db=db, user_id=user_id)
+    return primary_key.gemini_credentials if primary_key and primary_key.gemini_credentials else None
 
 async def deactivate_api_key(db: AsyncSession, user_id: UUID) -> bool:
     """

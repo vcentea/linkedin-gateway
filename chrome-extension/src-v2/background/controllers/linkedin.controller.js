@@ -16,6 +16,7 @@ import { createError } from '../../shared/utils/error-handler.js'; // Import cre
 import * as feedUtils from '../../content/linkedin/feed.js';
 import * as commentsUtils from '../../content/linkedin/comments.js';
 import * as postsUtils from '../../content/linkedin/posts.js';
+import * as authService from '../services/auth.service.js';
 
 // Use globalThis.chrome in service worker context
 const chrome = globalThis.chrome;
@@ -354,45 +355,41 @@ export async function checkLinkedInStatus() {
     logger.info('LinkedIn connection check response: OK (Status: 200)', 'linkedin.controller');
     
     // Update CSRF token and all cookies in backend if user has an API key
-    // Import dynamically to avoid circular dependency
-    import('../services/auth.service.js').then(authService => {
-      authService.getApiKey().then(apiKeyResult => {
-        if (apiKeyResult.success && apiKeyResult.keyExists) {
-          logger.info('API key exists, updating CSRF token and LinkedIn cookies in backend', 'linkedin.controller');
-          
-          // Update CSRF token
-          authService.updateCsrfToken(csrfToken).then(updateResult => {
+    // Use static import to avoid dynamic import issues in Service Worker
+    authService.getApiKey().then(apiKeyResult => {
+      if (apiKeyResult.success && apiKeyResult.keyExists) {
+        logger.info('API key exists, updating CSRF token and LinkedIn cookies in backend', 'linkedin.controller');
+        
+        // Update CSRF token
+        authService.updateCsrfToken(csrfToken).then(updateResult => {
+          if (updateResult.success) {
+            logger.info('CSRF token updated successfully in backend', 'linkedin.controller');
+          } else {
+            logger.warn(`Failed to update CSRF token in backend: ${updateResult.error}`, 'linkedin.controller');
+          }
+        }).catch(err => {
+          logger.error(`Error updating CSRF token: ${err.message}`, 'linkedin.controller');
+        });
+        
+        // Update all LinkedIn cookies
+        getAllLinkedInCookies().then(cookies => {
+          authService.updateLinkedInCookies(cookies).then(updateResult => {
             if (updateResult.success) {
-              logger.info('CSRF token updated successfully in backend', 'linkedin.controller');
+              logger.info(`LinkedIn cookies updated successfully in backend (${Object.keys(cookies).length} cookies)`, 'linkedin.controller');
             } else {
-              logger.warn(`Failed to update CSRF token in backend: ${updateResult.error}`, 'linkedin.controller');
+              logger.warn(`Failed to update LinkedIn cookies in backend: ${updateResult.error}`, 'linkedin.controller');
             }
           }).catch(err => {
-            logger.error(`Error updating CSRF token: ${err.message}`, 'linkedin.controller');
+            logger.error(`Error updating LinkedIn cookies: ${err.message}`, 'linkedin.controller');
           });
-          
-          // Update all LinkedIn cookies
-          getAllLinkedInCookies().then(cookies => {
-            authService.updateLinkedInCookies(cookies).then(updateResult => {
-              if (updateResult.success) {
-                logger.info(`LinkedIn cookies updated successfully in backend (${Object.keys(cookies).length} cookies)`, 'linkedin.controller');
-              } else {
-                logger.warn(`Failed to update LinkedIn cookies in backend: ${updateResult.error}`, 'linkedin.controller');
-              }
-            }).catch(err => {
-              logger.error(`Error updating LinkedIn cookies: ${err.message}`, 'linkedin.controller');
-            });
-          }).catch(err => {
-            logger.error(`Error retrieving LinkedIn cookies: ${err.message}`, 'linkedin.controller');
-          });
-        } else {
-          logger.info('No API key found, skipping CSRF token and cookies update', 'linkedin.controller');
-        }
-      }).catch(err => {
-        logger.error(`Error checking for API key: ${err.message}`, 'linkedin.controller');
-      });
+        }).catch(err => {
+          logger.error(`Error retrieving LinkedIn cookies: ${err.message}`, 'linkedin.controller');
+        });
+      } else {
+        logger.info('No API key found, skipping CSRF token and cookies update', 'linkedin.controller');
+      }
     }).catch(err => {
-      logger.error(`Error importing auth service: ${err.message}`, 'linkedin.controller');
+      logger.error(`Error checking for API key: ${err.message}`, 'linkedin.controller');
     });
     
     return { connected: true };
