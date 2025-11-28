@@ -712,20 +712,19 @@ class GeminiChatService:
         
         # Add thinking config for thinking-capable models
         if is_thinking_model(model):
-            if is_gemini_3_model(model):
-                # Gemini 3 models use thinkingLevel instead of thinkingBudget
-                logger.info(f"[BUILD_PAYLOAD] Adding thinkingConfig with thinkingLevel: HIGH (Gemini 3)")
-                gen_config["thinkingConfig"] = {
-                    "includeThoughts": True,
-                    "thinkingLevel": "HIGH"
-                }
+            # Check if thinkingConfig is already provided by user (via native API body)
+            if "thinkingConfig" in gen_config:
+                # Pass through user-provided config exactly as received
+                logger.info(f"[BUILD_PAYLOAD] Using user-provided thinkingConfig: {json.dumps(gen_config['thinkingConfig'])}")
             else:
-                # Gemini 2.5 models use thinkingBudget
-                thinking_budget = get_thinking_budget(model)
-                logger.info(f"[BUILD_PAYLOAD] Adding thinkingConfig with thinkingBudget: {thinking_budget if thinking_budget >= 0 else 8192} (Gemini 2.5)")
+                # Default behavior: 
+                # - includeThoughts=False (don't return thoughts in response)
+                # - NO thinkingBudget set (let model dynamically decide how much to think)
+                # This allows the model to think as needed while keeping response clean
+                logger.info(f"[BUILD_PAYLOAD] Applying default thinkingConfig: includeThoughts=False, thinkingBudget=dynamic (not set)")
                 gen_config["thinkingConfig"] = {
-                    "includeThoughts": True,
-                    "thinkingBudget": thinking_budget if thinking_budget >= 0 else 8192
+                    "includeThoughts": False
+                    # thinkingBudget intentionally omitted - model decides dynamically
                 }
         
         if gen_config:
@@ -804,32 +803,33 @@ class GeminiChatService:
         # The test script (which works) also doesn't include this header.
         headers = self._get_headers(include_project=False)
         
-        logger.info(f"[GEMINI CHAT] ========== generateContent Request ==========")
-        logger.info(f"[GEMINI CHAT] URL: {url}")
-        logger.info(f"[GEMINI CHAT] Headers: {json.dumps({k: v[:20] + '...' if k == 'Authorization' else v for k, v in headers.items()}, indent=2)}")
-        logger.info(f"[GEMINI CHAT] Payload summary:")
-        logger.info(f"[GEMINI CHAT]   - model: {payload.get('model')}")
-        logger.info(f"[GEMINI CHAT]   - project: {payload.get('project')}")
-        logger.info(f"[GEMINI CHAT]   - user_prompt_id: {payload.get('user_prompt_id')}")
-        logger.info(f"[GEMINI CHAT]   - session_id: {self._session_id}")
+        # ====== COMPREHENSIVE LOGGING: REQUEST TO GEMINI ======
+        logger.info(f"[GEMINI->API] ========== REQUEST TO GEMINI API ==========")
+        logger.info(f"[GEMINI->API] URL: {url}")
+        logger.info(f"[GEMINI->API] Headers: {json.dumps({k: v[:20] + '...' if k == 'Authorization' else v for k, v in headers.items()}, indent=2)}")
         
-        # Log request details
+        # Log full raw payload (this is what we send to Gemini)
+        raw_payload_json = json.dumps(payload, indent=2, ensure_ascii=False)
+        logger.info(f"[GEMINI->API] RAW PAYLOAD TO GEMINI ({len(raw_payload_json)} chars):")
+        # Log in chunks if too long
+        if len(raw_payload_json) > 5000:
+            logger.info(f"[GEMINI->API] (Payload truncated, showing first 5000 chars)")
+            logger.info(f"[GEMINI->API] {raw_payload_json[:5000]}...")
+        else:
+            logger.info(f"[GEMINI->API] {raw_payload_json}")
+        
+        # Log summary for quick reference
         request_data = payload.get("request", {})
-        logger.info(f"[GEMINI CHAT]   - contents count: {len(request_data.get('contents', []))}")
-        logger.info(f"[GEMINI CHAT]   - has systemInstruction: {bool(request_data.get('systemInstruction'))}")
-        logger.info(f"[GEMINI CHAT]   - has generationConfig: {bool(request_data.get('generationConfig'))}")
+        logger.info(f"[GEMINI->API] --- Summary ---")
+        logger.info(f"[GEMINI->API]   model: {payload.get('model')}")
+        logger.info(f"[GEMINI->API]   project: {payload.get('project')}")
+        logger.info(f"[GEMINI->API]   contents count: {len(request_data.get('contents', []))}")
+        logger.info(f"[GEMINI->API]   has systemInstruction: {bool(request_data.get('systemInstruction'))}")
+        logger.info(f"[GEMINI->API]   has generationConfig: {bool(request_data.get('generationConfig'))}")
         if request_data.get('generationConfig'):
-            gen_config = request_data.get('generationConfig', {})
-            logger.info(f"[GEMINI CHAT]   - generationConfig: {json.dumps(gen_config, indent=2)}")
-        logger.info(f"[GEMINI CHAT]   - has tools: {bool(request_data.get('tools'))}")
-        logger.info(f"[GEMINI CHAT]   - safetySettings count: {len(request_data.get('safetySettings', []))}")
-        
-        # Log full payload for debugging (truncate contents)
-        debug_payload = {**payload}
-        if "request" in debug_payload and "contents" in debug_payload["request"]:
-            debug_payload["request"] = {**debug_payload["request"]}
-            debug_payload["request"]["contents"] = f"[{len(payload['request']['contents'])} items - truncated]"
-        logger.info(f"[GEMINI CHAT] Full payload structure: {json.dumps(debug_payload, indent=2)}")
+            logger.info(f"[GEMINI->API]   generationConfig: {json.dumps(request_data.get('generationConfig'), indent=2)}")
+        logger.info(f"[GEMINI->API]   has tools: {bool(request_data.get('tools'))}")
+        logger.info(f"[GEMINI->API] ================================================")
         
         # Retry logic for SERVICE_DISABLED errors (API may need time to propagate after onboarding)
         max_retries = 3
@@ -872,19 +872,23 @@ class GeminiChatService:
                     
                     break  # Exit retry loop if not a SERVICE_DISABLED error or success
                 
-                logger.info(f"[GEMINI CHAT] ========== generateContent Response ==========")
-                logger.info(f"[GEMINI CHAT] Response status: {response.status_code}")
-                logger.info(f"[GEMINI CHAT] Response headers: {dict(response.headers)}")
+                # ====== COMPREHENSIVE LOGGING: RESPONSE FROM GEMINI ======
+                logger.info(f"[API->GEMINI] ========== RESPONSE FROM GEMINI API ==========")
+                logger.info(f"[API->GEMINI] Status: {response.status_code}")
+                logger.info(f"[API->GEMINI] Headers: {json.dumps(dict(response.headers), indent=2)}")
+                
+                # Get raw response text
+                raw_response_text = response.text
                 
                 if response.status_code != 200:
-                    error_text = response.text
-                    logger.error(f"[GEMINI CHAT] ERROR - Status {response.status_code}")
-                    logger.error(f"[GEMINI CHAT] ERROR - Response body: {error_text}")
+                    logger.error(f"[API->GEMINI] ERROR - Status {response.status_code}")
+                    logger.error(f"[API->GEMINI] RAW ERROR RESPONSE ({len(raw_response_text)} chars):")
+                    logger.error(f"[API->GEMINI] {raw_response_text}")
                     
                     # Try to parse error details
                     try:
-                        error_json = json.loads(error_text)
-                        logger.error(f"[GEMINI CHAT] ERROR - Parsed error: {json.dumps(error_json, indent=2)}")
+                        error_json = json.loads(raw_response_text)
+                        logger.error(f"[API->GEMINI] Parsed error: {json.dumps(error_json, indent=2)}")
                     except:
                         pass
                     
@@ -910,29 +914,49 @@ class GeminiChatService:
                     else:
                         raise Exception(f"Gemini API error: {response.status_code}")
                 
-                # Parse response
-                response_text = response.text
-                logger.info(f"[GEMINI CHAT] Response body length: {len(response_text)} chars")
+                # Log full raw response from Gemini
+                logger.info(f"[API->GEMINI] RAW RESPONSE FROM GEMINI ({len(raw_response_text)} chars):")
+                if len(raw_response_text) > 10000:
+                    logger.info(f"[API->GEMINI] (Response truncated, showing first 10000 chars)")
+                    logger.info(f"[API->GEMINI] {raw_response_text[:10000]}...")
+                else:
+                    logger.info(f"[API->GEMINI] {raw_response_text}")
                 
+                # Parse response
+                response_text = raw_response_text
                 if response_text.startswith("data: "):
                     response_text = response_text[6:]
                 
                 data = json.loads(response_text)
                 
-                # Log response summary
-                logger.info(f"[GEMINI CHAT] Response parsed successfully")
+                # Log detailed response analysis
+                logger.info(f"[API->GEMINI] --- Response Analysis ---")
                 if "response" in data:
                     resp = data["response"]
                     candidates = resp.get("candidates", [])
-                    logger.info(f"[GEMINI CHAT]   - candidates count: {len(candidates)}")
-                    if candidates:
-                        first_candidate = candidates[0]
-                        content = first_candidate.get("content", {})
+                    logger.info(f"[API->GEMINI]   candidates count: {len(candidates)}")
+                    
+                    for c_idx, candidate in enumerate(candidates):
+                        content = candidate.get("content", {})
                         parts = content.get("parts", [])
-                        logger.info(f"[GEMINI CHAT]   - first candidate parts: {len(parts)}")
-                        logger.info(f"[GEMINI CHAT]   - finish reason: {first_candidate.get('finishReason')}")
+                        logger.info(f"[API->GEMINI]   Candidate {c_idx}: {len(parts)} parts, finishReason={candidate.get('finishReason')}")
+                        
+                        # Analyze each part
+                        for p_idx, part in enumerate(parts):
+                            is_thought = part.get("thought", False)
+                            text_len = len(part.get("text", "")) if "text" in part else 0
+                            logger.info(f"[API->GEMINI]     Part {p_idx}: thought={is_thought}, text_len={text_len}")
+                            if text_len > 0 and text_len <= 200:
+                                logger.info(f"[API->GEMINI]     Part {p_idx} text: {part.get('text')}")
+                            elif text_len > 200:
+                                logger.info(f"[API->GEMINI]     Part {p_idx} text preview: {part.get('text')[:200]}...")
+                    
                     usage = resp.get("usageMetadata", {})
-                    logger.info(f"[GEMINI CHAT]   - usage: promptTokens={usage.get('promptTokenCount')}, candidatesTokens={usage.get('candidatesTokenCount')}")
+                    logger.info(f"[API->GEMINI]   usage: promptTokens={usage.get('promptTokenCount')}, candidatesTokens={usage.get('candidatesTokenCount')}, thoughtsTokens={usage.get('thoughtsTokenCount')}")
+                else:
+                    logger.warning(f"[API->GEMINI]   No 'response' key in data, keys: {list(data.keys())}")
+                
+                logger.info(f"[API->GEMINI] ================================================")
                 
                 # Extract the actual response
                 return data.get("response", data)
@@ -983,6 +1007,26 @@ class GeminiChatService:
         # IMPORTANT: Do NOT include X-Goog-User-Project header - project is in payload
         headers = self._get_headers(include_project=False)
         
+        # ====== COMPREHENSIVE LOGGING: STREAMING REQUEST TO GEMINI ======
+        logger.info(f"[GEMINI->API] ========== STREAMING REQUEST TO GEMINI API ==========")
+        logger.info(f"[GEMINI->API] URL: {url}")
+        logger.info(f"[GEMINI->API] Headers: {json.dumps({k: v[:20] + '...' if k == 'Authorization' else v for k, v in headers.items()}, indent=2)}")
+        
+        # Log full raw payload (this is what we send to Gemini)
+        raw_payload_json = json.dumps(payload, indent=2, ensure_ascii=False)
+        logger.info(f"[GEMINI->API] RAW PAYLOAD TO GEMINI ({len(raw_payload_json)} chars):")
+        if len(raw_payload_json) > 5000:
+            logger.info(f"[GEMINI->API] (Payload truncated, showing first 5000 chars)")
+            logger.info(f"[GEMINI->API] {raw_payload_json[:5000]}...")
+        else:
+            logger.info(f"[GEMINI->API] {raw_payload_json}")
+        
+        logger.info(f"[GEMINI->API] ================================================")
+        
+        chunk_count = 0
+        total_text_len = 0
+        total_thought_len = 0
+        
         try:
             async with httpx.AsyncClient() as client:
                 async with client.stream(
@@ -992,10 +1036,14 @@ class GeminiChatService:
                     json=payload,
                     timeout=300.0
                 ) as response:
+                    logger.info(f"[API->GEMINI] ========== STREAMING RESPONSE FROM GEMINI ==========")
+                    logger.info(f"[API->GEMINI] Status: {response.status_code}")
+                    
                     if response.status_code != 200:
                         error_text = await response.aread()
                         error_str = error_text.decode() if isinstance(error_text, bytes) else str(error_text)
-                        logger.error(f"Gemini streaming error {response.status_code}: {error_str}")
+                        logger.error(f"[API->GEMINI] ERROR - Status {response.status_code}")
+                        logger.error(f"[API->GEMINI] RAW ERROR: {error_str}")
                         
                         # Build helpful enable URL
                         enable_url = f"https://console.cloud.google.com/apis/library/cloudaicompanion.googleapis.com?project={self.project_id}"
@@ -1018,20 +1066,45 @@ class GeminiChatService:
                         if not line:
                             continue
                         
+                        raw_line = line
                         if line.startswith("data: "):
                             line = line[6:]
                         
                         try:
                             data = json.loads(line)
+                            chunk_count += 1
                             
                             # Extract the actual response chunk
-                            if "response" in data:
-                                yield data["response"]
-                            else:
-                                yield data
+                            chunk = data.get("response", data)
+                            
+                            # Analyze chunk for logging
+                            for candidate in chunk.get("candidates", []):
+                                content = candidate.get("content", {})
+                                for part in content.get("parts", []):
+                                    text = part.get("text", "")
+                                    is_thought = part.get("thought", False)
+                                    if is_thought:
+                                        total_thought_len += len(text)
+                                    else:
+                                        total_text_len += len(text)
+                            
+                            # Log every 10th chunk or first 3 chunks
+                            if chunk_count <= 3 or chunk_count % 10 == 0:
+                                logger.info(f"[API->GEMINI] Chunk #{chunk_count}: {len(raw_line)} chars")
+                                if len(raw_line) <= 500:
+                                    logger.info(f"[API->GEMINI] Raw chunk: {raw_line}")
+                            
+                            yield chunk
                                 
                         except json.JSONDecodeError:
+                            logger.warning(f"[API->GEMINI] Failed to parse chunk: {line[:200]}")
                             continue
+                    
+                    logger.info(f"[API->GEMINI] --- Stream Complete ---")
+                    logger.info(f"[API->GEMINI]   Total chunks: {chunk_count}")
+                    logger.info(f"[API->GEMINI]   Total text content: {total_text_len} chars")
+                    logger.info(f"[API->GEMINI]   Total thought content: {total_thought_len} chars")
+                    logger.info(f"[API->GEMINI] ================================================")
                             
         except httpx.TimeoutException:
             raise Exception("Streaming request to Gemini API timed out")
@@ -1125,18 +1198,35 @@ def convert_gemini_response_to_openai(
         content = candidate.get("content", {})
         parts = content.get("parts", [])
         
-        # Extract text content
+        # Extract text content - separate thinking from actual response
         text_content = ""
+        reasoning_content = ""
+        
         for part in parts:
             if "text" in part:
-                text_content += part["text"]
+                # Check if this is a thinking/reasoning part
+                if part.get("thought"):
+                    reasoning_content += part["text"]
+                    logger.debug(f"[CONVERT] Found thinking part: {len(part['text'])} chars")
+                else:
+                    text_content += part["text"]
+                    logger.debug(f"[CONVERT] Found text part: {len(part['text'])} chars")
+        
+        logger.info(f"[CONVERT] Candidate {idx}: text={len(text_content)} chars, reasoning={len(reasoning_content)} chars")
+        
+        # Build message with optional reasoning_content for thinking models
+        message: Dict[str, Any] = {
+            "role": "assistant",
+            "content": text_content
+        }
+        
+        # Include reasoning_content if present (for clients that support it)
+        if reasoning_content:
+            message["reasoning_content"] = reasoning_content
         
         choices.append({
             "index": idx,
-            "message": {
-                "role": "assistant",
-                "content": text_content
-            },
+            "message": message,
             "finish_reason": _map_finish_reason(candidate.get("finishReason"))
         })
     

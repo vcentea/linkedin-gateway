@@ -246,7 +246,6 @@ async def generate_content(
     ```
     """
     model_name = _extract_model_from_path(model_path)
-    logger.info(f"[GEMINI v1beta] generateContent request for model: {model_name}")
     
     # Parse request body first to extract potential api_key
     try:
@@ -256,6 +255,29 @@ async def generate_content(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid JSON body: {str(e)}"
         )
+    
+    # ====== COMPREHENSIVE LOGGING: REQUEST FROM CLIENT ======
+    logger.info(f"[CLIENT->SERVER] ========== REQUEST FROM CLIENT ==========")
+    logger.info(f"[CLIENT->SERVER] Endpoint: /gemini/v1beta/models/{model_path}:generateContent")
+    logger.info(f"[CLIENT->SERVER] Model: {model_name}")
+    logger.info(f"[CLIENT->SERVER] Headers: {dict(request.headers)}")
+    
+    # Log full raw request body from client
+    raw_body_json = json.dumps(body, indent=2, ensure_ascii=False)
+    logger.info(f"[CLIENT->SERVER] RAW REQUEST BODY ({len(raw_body_json)} chars):")
+    if len(raw_body_json) > 5000:
+        logger.info(f"[CLIENT->SERVER] (Body truncated, showing first 5000 chars)")
+        logger.info(f"[CLIENT->SERVER] {raw_body_json[:5000]}...")
+    else:
+        logger.info(f"[CLIENT->SERVER] {raw_body_json}")
+    
+    # Log summary
+    logger.info(f"[CLIENT->SERVER] --- Summary ---")
+    logger.info(f"[CLIENT->SERVER]   contents: {len(body.get('contents', []))} items")
+    logger.info(f"[CLIENT->SERVER]   generationConfig: {body.get('generationConfig')}")
+    logger.info(f"[CLIENT->SERVER]   systemInstruction: {bool(body.get('systemInstruction'))}")
+    logger.info(f"[CLIENT->SERVER]   tools: {bool(body.get('tools'))}")
+    logger.info(f"[CLIENT->SERVER] ================================================")
     
     # Extract api_key from body if present (for compatibility)
     api_key_from_body = body.get("api_key") or body.get("key")
@@ -303,6 +325,37 @@ async def generate_content(
             generation_config=generation_config,
             tools=tools
         )
+        
+        # ====== COMPREHENSIVE LOGGING: RESPONSE TO CLIENT ======
+        logger.info(f"[SERVER->CLIENT] ========== RESPONSE TO CLIENT ==========")
+        logger.info(f"[SERVER->CLIENT] Endpoint: /gemini/v1beta/models/{model_path}:generateContent")
+        
+        # Log full raw response being sent to client
+        raw_response_json = json.dumps(response, indent=2, ensure_ascii=False)
+        logger.info(f"[SERVER->CLIENT] RAW RESPONSE BODY ({len(raw_response_json)} chars):")
+        if len(raw_response_json) > 10000:
+            logger.info(f"[SERVER->CLIENT] (Response truncated, showing first 10000 chars)")
+            logger.info(f"[SERVER->CLIENT] {raw_response_json[:10000]}...")
+        else:
+            logger.info(f"[SERVER->CLIENT] {raw_response_json}")
+        
+        # Log response analysis
+        logger.info(f"[SERVER->CLIENT] --- Response Analysis ---")
+        candidates = response.get("candidates", [])
+        logger.info(f"[SERVER->CLIENT]   candidates: {len(candidates)}")
+        for c_idx, candidate in enumerate(candidates):
+            content = candidate.get("content", {})
+            parts = content.get("parts", [])
+            logger.info(f"[SERVER->CLIENT]   Candidate {c_idx}: {len(parts)} parts, finishReason={candidate.get('finishReason')}")
+            for p_idx, part in enumerate(parts):
+                is_thought = part.get("thought", False)
+                text_len = len(part.get("text", "")) if "text" in part else 0
+                logger.info(f"[SERVER->CLIENT]     Part {p_idx}: thought={is_thought}, text_len={text_len}")
+        
+        usage = response.get("usageMetadata", {})
+        logger.info(f"[SERVER->CLIENT]   usage: promptTokens={usage.get('promptTokenCount')}, candidatesTokens={usage.get('candidatesTokenCount')}, thoughtsTokens={usage.get('thoughtsTokenCount')}")
+        logger.info(f"[SERVER->CLIENT] ================================================")
+        
         return response
     except Exception as e:
         logger.error(f"[GEMINI v1beta] generateContent error: {e}")
@@ -338,7 +391,6 @@ async def stream_generate_content(
     **Response:** Server-sent events stream
     """
     model_name = _extract_model_from_path(model_path)
-    logger.info(f"[GEMINI v1beta] streamGenerateContent request for model: {model_name}")
     
     # Parse request body first to extract potential api_key
     try:
@@ -348,6 +400,29 @@ async def stream_generate_content(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid JSON body: {str(e)}"
         )
+    
+    # ====== COMPREHENSIVE LOGGING: STREAMING REQUEST FROM CLIENT ======
+    logger.info(f"[CLIENT->SERVER] ========== STREAMING REQUEST FROM CLIENT ==========")
+    logger.info(f"[CLIENT->SERVER] Endpoint: /gemini/v1beta/models/{model_path}:streamGenerateContent")
+    logger.info(f"[CLIENT->SERVER] Model: {model_name}")
+    logger.info(f"[CLIENT->SERVER] Headers: {dict(request.headers)}")
+    
+    # Log full raw request body from client
+    raw_body_json = json.dumps(body, indent=2, ensure_ascii=False)
+    logger.info(f"[CLIENT->SERVER] RAW REQUEST BODY ({len(raw_body_json)} chars):")
+    if len(raw_body_json) > 5000:
+        logger.info(f"[CLIENT->SERVER] (Body truncated, showing first 5000 chars)")
+        logger.info(f"[CLIENT->SERVER] {raw_body_json[:5000]}...")
+    else:
+        logger.info(f"[CLIENT->SERVER] {raw_body_json}")
+    
+    # Log summary
+    logger.info(f"[CLIENT->SERVER] --- Summary ---")
+    logger.info(f"[CLIENT->SERVER]   contents: {len(body.get('contents', []))} items")
+    logger.info(f"[CLIENT->SERVER]   generationConfig: {body.get('generationConfig')}")
+    logger.info(f"[CLIENT->SERVER]   systemInstruction: {bool(body.get('systemInstruction'))}")
+    logger.info(f"[CLIENT->SERVER]   tools: {bool(body.get('tools'))}")
+    logger.info(f"[CLIENT->SERVER] ================================================")
     
     # Extract api_key from body if present (for compatibility)
     api_key_from_body = body.get("api_key") or body.get("key")
@@ -387,7 +462,13 @@ async def stream_generate_content(
     service = GeminiChatService(credentials, api_key, db)
     
     async def generate_stream():
+        chunk_count = 0
+        total_text_len = 0
+        total_thought_len = 0
+        
         try:
+            logger.info(f"[SERVER->CLIENT] ========== STREAMING RESPONSE TO CLIENT ==========")
+            
             async for chunk in service.stream_generate_content(
                 model=model_name,
                 contents=contents,
@@ -395,8 +476,36 @@ async def stream_generate_content(
                 generation_config=generation_config,
                 tools=tools
             ):
+                chunk_count += 1
                 chunk_json = json.dumps(chunk) if isinstance(chunk, dict) else str(chunk)
+                
+                # Log each chunk details
+                if isinstance(chunk, dict):
+                    candidates = chunk.get("candidates", [])
+                    for candidate in candidates:
+                        content = candidate.get("content", {})
+                        for part in content.get("parts", []):
+                            text = part.get("text", "")
+                            is_thought = part.get("thought", False)
+                            if is_thought:
+                                total_thought_len += len(text)
+                            else:
+                                total_text_len += len(text)
+                
+                # Log every 10th chunk or first 3 chunks
+                if chunk_count <= 3 or chunk_count % 10 == 0:
+                    logger.info(f"[SERVER->CLIENT] Chunk #{chunk_count}: {len(chunk_json)} chars")
+                    if len(chunk_json) <= 500:
+                        logger.info(f"[SERVER->CLIENT] Chunk content: {chunk_json}")
+                
                 yield f"data: {chunk_json}\n\n"
+            
+            logger.info(f"[SERVER->CLIENT] --- Stream Complete ---")
+            logger.info(f"[SERVER->CLIENT]   Total chunks: {chunk_count}")
+            logger.info(f"[SERVER->CLIENT]   Total text content: {total_text_len} chars")
+            logger.info(f"[SERVER->CLIENT]   Total thought content: {total_thought_len} chars")
+            logger.info(f"[SERVER->CLIENT] ================================================")
+            
         except Exception as e:
             logger.error(f"[GEMINI v1beta] streamGenerateContent error: {e}")
             yield f"data: {json.dumps({'error': str(e)})}\n\n"

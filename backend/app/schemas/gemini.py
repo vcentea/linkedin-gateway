@@ -57,6 +57,7 @@ class ChatMessage(BaseModel):
     """OpenAI-compatible chat message."""
     role: Literal["system", "user", "assistant"] = Field(..., description="Message role")
     content: Union[str, List[Dict[str, Any]]] = Field(..., description="Message content (text or multimodal)")
+    reasoning_content: Optional[str] = Field(None, description="Reasoning/thinking content (for thinking models in responses)")
 
 
 class ChatCompletionRequest(BaseModel):
@@ -209,9 +210,9 @@ class GeminiSafetySettings(BaseModel):
 
 
 class GeminiThinkingConfig(BaseModel):
-    """Thinking configuration for Gemini 2.5 models."""
-    thinking_budget: Optional[int] = Field(None, alias="thinkingBudget")
-    include_thoughts: Optional[bool] = Field(True, alias="includeThoughts")
+    """Thinking configuration for Gemini 2.5+ models."""
+    thinking_budget: Optional[int] = Field(None, alias="thinkingBudget", description="Token budget for thinking. Omit to let model decide dynamically. Set to 0 to disable thinking.")
+    include_thoughts: Optional[bool] = Field(False, alias="includeThoughts", description="Whether to include thought process in response. Default: False")
 
 
 class GeminiGenerationConfig(BaseModel):
